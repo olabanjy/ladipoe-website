@@ -16,9 +16,12 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     pip install --upgrade pip setuptools wheel \
     && pip install --prefer-binary -r /app/requirements.txt
 
+
 COPY . /app
 
-RUN mkdir -p /app/vol/static /app/vol/media
+# Ensure all scripts are executable (especially entrypoint.prod.sh)
+RUN chmod +x /app/scripts/*.sh \
+    && mkdir -p /app/vol/static /app/vol/media
 
 EXPOSE 8000
 
