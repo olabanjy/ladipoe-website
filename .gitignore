@@ -1,0 +1,69 @@
+# --------------------------------------------------
+# OS / Editor
+# --------------------------------------------------
+**/.DS_Store
+**/.AppleDouble
+**/.LSOverride
+
+**/.vscode/
+**/.idea/*
+**/*.iml
+**/*.ipr
+**/*.iws
+**/out/
+**/local.properties
+
+**/.project
+**/.classpath
+**/.settings
+
+**/*~
+**/*.swp
+**/*.swo
+
+**/*.sublime-workspace
+**/*.sublime-project
+
+# --------------------------------------------------
+# Environment / Secrets
+# --------------------------------------------------
+**/.env
+**/.env.*
+.dev.env
+.prod.env
+.staging.env
+
+# --------------------------------------------------
+# Python / Django
+# --------------------------------------------------
+**/*.py[cod]
+**/__pycache__
+
+**/.pytest_cache
+**/.coverage
+**/.coverage.*
+**/htmlcov
+**/.tox
+**/*.egg-info
+**/.eggs
+
+staticfiles/
+media/
+**/*.sqlite3
+
+# --------------------------------------------------
+# Logs
+# --------------------------------------------------
+**/logs
+**/*.log
+**/pip-log.txt
+**/npm-debug.log*
+
+# --------------------------------------------------
+# Celery
+# --------------------------------------------------
+celerybeat-schedule
+celerybeat.pid
+
+# --
+app/.keys/jwt_private.pem

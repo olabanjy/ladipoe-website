@@ -1,0 +1,382 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+
+  <title>Side Menu Background Switch</title>
+  <style>
+    :root{
+      --pad: 48px;
+      --text: rgba(255,255,255,.92);
+      --muted: rgba(255,255,255,.55);
+      --shadow: 0 10px 30px rgba(0,0,0,.35);
+    }
+
+    *{ box-sizing:border-box; }
+    html, body{ height:100%; }
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+      color: var(--text);
+      background:#000;
+      overflow:hidden;
+    }
+
+    /* ===== Background crossfade layers ===== */
+    .afrobeats-stage{
+      position:relative;
+      height:100%;
+      width:100%;
+    }
+    .afrobeats-bg{
+      position:absolute;
+      inset:0;
+      background-position:center;
+      background-size:cover;
+      background-repeat:no-repeat;
+      will-change: opacity, transform;
+      transform: scale(1.03);
+    }
+    .afrobeats-bg--a{ opacity:1; }
+    .afrobeats-bg--b{ opacity:0; }
+    .afrobeats-bg--fade-in{ opacity:1; transition: opacity 550ms ease; }
+    .afrobeats-bg--fade-out{ opacity:0; transition: opacity 550ms ease; }
+
+    .afrobeats-vignette{
+      position:absolute;
+      inset:0;
+      pointer-events:none;
+      background:
+        radial-gradient(1200px 700px at 70% 40%, rgba(0,0,0,0) 0%, rgba(0,0,0,.35) 55%, rgba(0,0,0,.75) 100%),
+        linear-gradient(to bottom, rgba(0,0,0,.45), rgba(0,0,0,.25) 35%, rgba(0,0,0,.35));
+    }
+
+    /* ===== Top bar ===== */
+    .afrobeats-topbar{
+      position:absolute;
+      top:0;
+      left:0;
+      right:0;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      padding: 26px var(--pad);
+      z-index:10;
+    }
+
+    .afrobeats-brand{
+      letter-spacing:.5em;
+      font-weight:600;
+      font-size:14px;
+      opacity:.95;
+      text-transform:uppercase;
+      line-height:1.05;
+    }
+    .afrobeats-brand small{
+      display:block;
+      letter-spacing:.62em;
+      font-size:12px;
+      opacity:.9;
+      margin-top:4px;
+    }
+
+    .afrobeats-nav{
+      display:flex;
+      gap:26px;
+      font-size:15px;
+      opacity:.9;
+    }
+    .afrobeats-nav a{
+      color:var(--text);
+      text-decoration:none;
+      padding:6px 4px;
+    }
+    .afrobeats-nav a:hover{ opacity:.8; }
+
+    .afrobeats-badge{
+      width:34px;
+      height:34px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,.35);
+      display:grid;
+      place-items:center;
+      font-weight:700;
+      opacity:.9;
+      user-select:none;
+    }
+
+    /* ===== Left menu ===== */
+    .afrobeats-sidebar{
+      position:absolute;
+      left:0;
+      top:0;
+      bottom:0;
+      width:min(520px, 46vw);
+      padding: 132px 0 34px var(--pad);
+      z-index:10;
+      display:flex;
+      flex-direction:column;
+      gap: 22px;
+    }
+
+    .afrobeats-group{
+      display:flex;
+      flex-direction:column;
+      gap: 12px;
+    }
+
+    .afrobeats-year{
+      color: var(--muted);
+      font-size:16px;
+      margin-top:10px;
+      margin-bottom:0;
+      letter-spacing:.06em;
+    }
+
+    /* Clickable row */
+    .afrobeats-menu-item{
+      display:flex;
+      align-items:baseline;
+      gap: 12px;
+      padding: 10px 14px 10px 0;
+      border-radius: 10px;
+      cursor:pointer;
+      user-select:none;
+      width: fit-content;
+      max-width: calc(100% - var(--pad));
+      transition: transform 160ms ease, opacity 160ms ease;
+      position:relative;
+    }
+
+    .afrobeats-menu-item:hover{ transform: translateX(2px); }
+
+    .afrobeats-menu-item__arrow{
+      width:22px;
+      flex: 0 0 22px;
+      opacity: .9;
+      font-size: 18px;
+      transform: translateY(2px);
+    }
+
+    .afrobeats-menu-item__title{
+      font-size: 44px;
+      line-height:1.02;
+      letter-spacing:.01em;
+      text-shadow: var(--shadow);
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      max-width: 100%;
+    }
+
+    .afrobeats-menu-item__kind{
+      font-size: 14px;
+      color: var(--muted);
+      margin-left: 8px;
+      letter-spacing:.08em;
+    }
+
+    .afrobeats-menu-item--inactive{
+      opacity: .52;
+      filter: saturate(.85);
+    }
+
+    .afrobeats-menu-item--active{
+      opacity: 1;
+    }
+
+    .afrobeats-menu-item--active::after{
+      content:"";
+      position:absolute;
+      left:-10px;
+      right:-10px;
+      top:0;
+      bottom:0;
+      border-radius: 14px;
+      background: rgba(255,255,255,.06);
+      border: 1px solid rgba(255,255,255,.10);
+      z-index:-1;
+    }
+
+    .afrobeats-bottom-fade{
+      position:absolute;
+      left:0;
+      right:0;
+      bottom:0;
+      height: 180px;
+      z-index:9;
+      pointer-events:none;
+      background: linear-gradient(to bottom, rgba(0,0,0,0), rgba(0,0,0,.75));
+    }
+
+    @media (max-width: 820px){
+      :root{ --pad: 22px; }
+      .afrobeats-sidebar{ width: 100vw; padding-top: 110px; }
+      .afrobeats-menu-item__title{ font-size: 36px; }
+      .afrobeats-nav{ gap:16px; font-size:14px; }
+      .afrobeats-brand{ letter-spacing:.35em; }
+    }
+  </style>
+</head>
+<body>
+  <div class="afrobeats-stage">
+    <!-- Background layers for crossfade -->
+    <div class="afrobeats-bg afrobeats-bg--a" id="afrobeatsBgA"></div>
+    <div class="afrobeats-bg afrobeats-bg--b" id="afrobeatsBgB"></div>
+    <div class="afrobeats-vignette"></div>
+
+    <!-- Top bar -->
+    <header class="afrobeats-topbar">
+      <div class="afrobeats-brand">
+        LOUP<br/>
+        <small>GAROU</small>
+      </div>
+
+      <nav class="afrobeats-nav" aria-label="Top navigation">
+        <a href="#">Film</a>
+        <a href="#">Web</a>
+        <a href="#">TV</a>
+        <a href="#">+ Bonus Content</a>
+      </nav>
+
+      <div class="afrobeats-badge" aria-hidden="true">✌</div>
+    </header>
+
+    <!-- Left menu -->
+    <aside class="afrobeats-sidebar" id="afrobeatsSidebar">
+      <div class="afrobeats-group">
+        <p class="afrobeats-year">2025</p>
+
+        <div class="afrobeats-menu-item afrobeats-menu-item--active"
+             data-id="the-odds"
+             data-bg="https://images.unsplash.com/photo-1520975916090-3105956dac38?auto=format&fit=crop&w=2400&q=70"
+             role="button" tabindex="0" aria-label="The Odds">
+          <div class="afrobeats-menu-item__arrow">↗</div>
+          <div>
+            <span class="afrobeats-menu-item__title">The Odds</span>
+            <span class="afrobeats-menu-item__kind">Film</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="afrobeats-group">
+        <p class="afrobeats-year">2024</p>
+
+        <div class="afrobeats-menu-item afrobeats-menu-item--inactive"
+             data-id="ojuelegba"
+             data-bg="https://images.unsplash.com/photo-1520975958221-6a6568bb29b8?auto=format&fit=crop&w=2400&q=70"
+             role="button" tabindex="0" aria-label="Ojuelegba at 10">
+          <div class="afrobeats-menu-item__arrow"></div>
+          <div>
+            <span class="afrobeats-menu-item__title">Ojuelegba at 10</span>
+            <span class="afrobeats-menu-item__kind">Web</span>
+          </div>
+        </div>
+
+        <div class="afrobeats-menu-item afrobeats-menu-item--inactive"
+             data-id="skate-noise"
+             data-bg="https://images.unsplash.com/photo-1520975802866-656a1b5c36f5?auto=format&fit=crop&w=2400&q=70"
+             role="button" tabindex="0" aria-label="Skate Noise Lagos">
+          <div class="afrobeats-menu-item__arrow"></div>
+          <div>
+            <span class="afrobeats-menu-item__title">Skate Noise Lagos</span>
+            <span class="afrobeats-menu-item__kind">Web</span>
+          </div>
+        </div>
+
+        <div class="afrobeats-menu-item afrobeats-menu-item--inactive"
+             data-id="spotify-radar"
+             data-bg="https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=2400&q=70"
+             role="button" tabindex="0" aria-label="Spotify RADAR Africa: Meet Shallipopi">
+          <div class="afrobeats-menu-item__arrow"></div>
+          <div>
+            <span class="afrobeats-menu-item__title">Spotify RADAR Africa: Meet Shallipopi</span>
+            <span class="afrobeats-menu-item__kind">Web</span>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <div class="afrobeats-bottom-fade"></div>
+  </div>
+
+
+
+    <script>
+    (function(){
+      const bgA = document.getElementById("afrobeatsBgA");
+      const bgB = document.getElementById("afrobeatsBgB");
+      const sidebar = document.getElementById("afrobeatsSidebar");
+
+      // Start background from the initially active item
+      const initial = sidebar.querySelector(".afrobeats-menu-item--active");
+      const initialUrl = initial?.dataset.bg;
+      if (initialUrl) bgA.style.backgroundImage = `url('${initialUrl}')`;
+
+      let showingA = true;
+      let currentId = initial?.dataset.id || null;
+
+      function crossfadeTo(url){
+        if (!url) return;
+
+        const incoming = showingA ? bgB : bgA;
+        const outgoing = showingA ? bgA : bgB;
+
+        // Set image before fade so it loads as early as possible
+        incoming.style.backgroundImage = `url('${url}')`;
+
+        // Reset classes (important if user clicks quickly)
+        incoming.classList.remove("afrobeats-bg--fade-out");
+        outgoing.classList.remove("afrobeats-bg--fade-in");
+
+        // Force reflow to reliably restart transitions
+        void incoming.offsetWidth;
+
+        incoming.classList.add("afrobeats-bg--fade-in");
+        outgoing.classList.add("afrobeats-bg--fade-out");
+
+        showingA = !showingA;
+      }
+
+      function setActive(item){
+        const all = sidebar.querySelectorAll(".afrobeats-menu-item");
+        all.forEach(el => {
+          el.classList.remove("afrobeats-menu-item--active");
+          el.classList.add("afrobeats-menu-item--inactive");
+          const arrow = el.querySelector(".afrobeats-menu-item__arrow");
+          if (arrow) arrow.textContent = ""; // clear arrow for inactive
+        });
+
+        item.classList.add("afrobeats-menu-item--active");
+        item.classList.remove("afrobeats-menu-item--inactive");
+        const arrow = item.querySelector(".afrobeats-menu-item__arrow");
+        if (arrow) arrow.textContent = "↗";
+      }
+
+      function handleActivate(item){
+        const { bg, id } = item.dataset;
+        if (id && id === currentId) return; // no-op
+        currentId = id || null;
+
+        setActive(item);
+        crossfadeTo(bg);
+      }
+
+      // Click anywhere on a row
+      sidebar.addEventListener("click", (e) => {
+        const item = e.target.closest(".afrobeats-menu-item");
+        if (!item || !sidebar.contains(item)) return;
+        handleActivate(item);
+      });
+
+      // Keyboard: Enter/Space activates
+      sidebar.addEventListener("keydown", (e) => {
+        if (e.key !== "Enter" && e.key !== " ") return;
+        const item = e.target.closest(".afrobeats-menu-item");
+        if (!item) return;
+        e.preventDefault();
+        handleActivate(item);
+      });
+    })();
+  </script>

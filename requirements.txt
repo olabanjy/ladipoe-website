@@ -1,0 +1,10 @@
+Django>=4.2
+django-environ
+gunicorn
+whitenoise
+psycopg[binary]==3.2.3
+django-admin-sortable2==2.2.3
+Pillow==10.4.0
+watchdog==4.0.2
+uvicorn[standard]==0.30.6
+django-browser-reload==1.21.0
