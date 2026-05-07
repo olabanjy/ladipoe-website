@@ -39,6 +39,14 @@
 	 docker compose -f docker-compose.prod.yml exec web python manage.py <command>
 	 ```
 
+5. Seed the homepage slider content from the bundled template data:
+
+	 ```sh
+	 docker compose -f docker-compose.prod.yml exec web python manage.py seed_slider_content
+	 ```
+
+	 - Add `--dry-run` first if you want to preview the changes without writing to the database.
+
 ## Project Structure
 
 - `config/settings/` — Split settings: `base.py`, `dev.py`, `prod.py`
@@ -74,6 +82,10 @@
 - **Collect static (prod):**
 	```sh
 	docker compose -f docker-compose.prod.yml exec web python manage.py collectstatic --noinput
+	```
+- **Seed slider content:**
+	```sh
+	docker compose -f docker-compose.prod.yml exec web python manage.py seed_slider_content
 	```
 
 ## Slider CMS: Drag-and-drop Ordering & Preview
