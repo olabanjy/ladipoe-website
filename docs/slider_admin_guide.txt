@@ -1,0 +1,146 @@
+Ladipoe Slider Admin Guide
+
+Overview
+
+The homepage sliders are managed in Django Admin under:
+Admin > Media Slider > Sliders
+
+Each slider is made of three parts:
+1. Slider
+2. Slider Item
+3. DSP Link
+
+1. Slider
+
+A Slider is the main card shown in the bottom navigation on the homepage.
+
+Fields:
+- Slot: the slider position on the page, from 0 to 3
+- Title: the main label shown on the slider
+- Kind: the category label shown under the title
+- Active: turn this on to make the slider visible
+- Default video URL or Default video file: the background video for that slider
+
+Important rules:
+- Each slot must be unique.
+- A slider must have a default video URL or file.
+- If Active is off, the slider will not appear on the site.
+
+How to add a slider:
+1. Open Django Admin.
+2. Go to Media Slider > Sliders.
+3. Click Add Slider.
+4. Fill in Slot, Title, Kind, and a default video.
+5. Turn Active on.
+6. Save.
+
+2. Slider Item
+
+A Slider Item is one of the content entries shown in the right-side menu after a slider is selected.
+
+Fields:
+- Position: controls the order of the item inside the slider
+- Year
+- Title
+- Kind
+- Meta
+- Image URL or Image File
+- YouTube URL
+- Active
+
+Important rules:
+- Each slider item should have either an image URL or an uploaded image file.
+- Position controls the order of the items.
+- If Active is off, the item will not appear on the site.
+
+How to add a slider item:
+1. Open the slider you want to edit.
+2. In the Slider Items section, click Add another Slider Item.
+3. Fill in the item details.
+4. Add an image URL or upload an image file.
+5. Add a YouTube URL if the content should have a play button.
+6. Turn Active on.
+7. Save.
+
+3. DSP Link
+
+A DSP Link is a listen link attached to a slider item.
+
+Fields:
+- Position: controls the order of the listen links
+- Name: for example Spotify or Apple Music
+- URL
+- Active
+
+How to add a DSP link:
+1. Open a slider item.
+2. In the DSP Links section, click Add another DSP Link.
+3. Fill in the platform name and URL.
+4. Set the order with Position.
+5. Turn Active on.
+6. Save.
+
+How ordering works
+
+The site uses the Position field to control display order.
+
+Recommended order:
+- Slider slots: 0, 1, 2, 3
+- Slider items: 0, 1, 2, and so on
+- DSP links: 0, 1, 2, and so on
+
+How to preview changes
+
+Each slider has a Preview button in the admin page.
+
+Use Preview to:
+- Check that the slider looks correct before publishing
+- Confirm images, videos, and links are working
+
+Publishing workflow
+
+Recommended workflow for the business team:
+1. Create or edit the slider.
+2. Add or update slider items.
+3. Add DSP links to each slider item.
+4. Save all changes.
+5. Click Preview.
+6. If everything looks correct, leave Active enabled.
+
+What the homepage uses from admin
+
+The homepage reads slider content from the database.
+
+That means:
+- Anything saved and active in admin can appear on the website
+- You do not need to edit the HTML template to change slider content
+
+Initial content setup
+
+If the starter slider content needs to be loaded into the database, run:
+
+docker compose -f docker-compose.prod.yml exec web python manage.py seed_slider_content
+
+To preview the import without changing anything:
+
+docker compose -f docker-compose.prod.yml exec web python manage.py seed_slider_content --dry-run
+
+Quick rules for the team
+
+- Use one slider per slot.
+- Always keep at least one active slider item in each slider.
+- Always add an image for each item.
+- Always add a video for the main slider.
+- Use Preview before publishing.
+- Turn off Active only when you want content hidden from the site.
+
+Support notes
+
+If content is not showing:
+- Check that the Slider is Active
+- Check that at least one Slider Item is Active
+- Check that the item has an image
+- Check that the slot number is correct
+- Check the order fields
+- Refresh the preview after saving
+

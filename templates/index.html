@@ -1996,16 +1996,14 @@
     syncStageMode();
 
     bgA.dataset.mode = "video";
-    var initialEntry = entryForSlot(activeIndex) || {};
-    var initialTile = getTileBySlot(activeIndex);
-    var initialVideo = (initialTile && initialTile.dataset.video) || initialEntry.video;
-    playVideo(vidA, initialVideo);
+
+    // Show the first slider content immediately on load instead of waiting
+    // for a manual click on the first tile.
+    autoSelectFirstNavItem();
 
     // restart progress on the *active tile* (slot-based)
     restartProgress(getTileBySlot(activeIndex) || TILE_LIST[0]);
 
-    setPlayButtonVisible(false);
-    setDSPVisible(false);
     setTabActive(null);
 
     // center the first active tile on mobile
