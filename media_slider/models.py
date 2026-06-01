@@ -67,3 +67,19 @@ class DSPLink(models.Model):
 
     def __str__(self):
         return f"{self.name} for {self.item}"
+
+
+class Event(models.Model):
+    position = models.PositiveSmallIntegerField(default=0)
+    title = models.CharField(max_length=255)
+    event_date = models.DateField(blank=True, null=True)
+    location = models.CharField(max_length=255, blank=True)
+    cta_label = models.CharField(max_length=255, default="Get Access")
+    link = models.URLField(blank=True)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ["position", "event_date", "title"]
+
+    def __str__(self):
+        return self.title

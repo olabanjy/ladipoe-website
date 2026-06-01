@@ -1,12 +1,15 @@
+from datetime import date
+
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
-from media_slider.models import DSPLink, Slider, SliderItem
+from media_slider.models import DSPLink, Event, Slider, SliderItem
+from media_slider.seed_events import SEED_EVENTS
 from media_slider.seed_data import SEED_SLIDERS
 
 
 class Command(BaseCommand):
-    help = "Seed slider content from the bundled Ladipoe homepage data."
+    help = "Seed slider and events content from the bundled Ladipoe homepage data."
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -24,6 +27,8 @@ class Command(BaseCommand):
         updated_items = 0
         created_dsps = 0
         updated_dsps = 0
+        created_events = 0
+        updated_events = 0
 
         seed_slots = [slider["slot"] for slider in SEED_SLIDERS]
         existing_sliders = Slider.objects.exclude(slot__in=seed_slots)
@@ -145,17 +150,53 @@ class Command(BaseCommand):
                         else:
                             updated_dsps += 1
 
+        seed_event_positions = [event["position"] for event in SEED_EVENTS]
+        existing_events = Event.objects.exclude(position__in=seed_event_positions)
+        removed_events = existing_events.count()
+        if dry_run:
+            self.stdout.write(self.style.WARNING(f"Would delete {removed_events} event(s) not present in seed data."))
+        else:
+            existing_events.delete()
+
+        for event_data in SEED_EVENTS:
+            event_defaults = {
+                "title": event_data["title"],
+                "event_date": date.fromisoformat(event_data["event_date"]) if event_data.get("event_date") else None,
+                "location": event_data.get("location", ""),
+                "cta_label": event_data.get("cta_label", "Get Access"),
+                "link": event_data.get("link", ""),
+                "is_active": True,
+            }
+
+            if dry_run:
+                event_exists = Event.objects.filter(position=event_data["position"]).exists()
+                if event_exists:
+                    updated_events += 1
+                else:
+                    created_events += 1
+            else:
+                _, was_created = Event.objects.update_or_create(
+                    position=event_data["position"],
+                    defaults=event_defaults,
+                )
+                if was_created:
+                    created_events += 1
+                else:
+                    updated_events += 1
+
         if dry_run:
             self.stdout.write(self.style.WARNING("Dry run complete. No database changes were made."))
             self.stdout.write(
                 f"Would create {created_sliders} slider(s), update {updated_sliders} slider(s), "
                 f"create {created_items} item(s), update {updated_items} item(s), "
-                f"create {created_dsps} DSP link(s), update {updated_dsps} DSP link(s)."
+                f"create {created_dsps} DSP link(s), update {updated_dsps} DSP link(s), "
+                f"create {created_events} event(s), update {updated_events} event(s)."
             )
             return
 
         self.stdout.write(self.style.SUCCESS(
             f"Seeded slider content: {created_sliders} created, {updated_sliders} updated; "
             f"{created_items} items created, {updated_items} updated; "
-            f"{created_dsps} DSP links created, {updated_dsps} updated."
+            f"{created_dsps} DSP links created, {updated_dsps} updated; "
+            f"{created_events} events created, {updated_events} updated."
         ))

@@ -121,9 +121,17 @@ If the starter slider content needs to be loaded into the database, run:
 
 docker compose -f docker-compose.prod.yml exec web python manage.py seed_slider_content
 
+That command also seeds the Events section on the landing page.
+
 To preview the import without changing anything:
 
 docker compose -f docker-compose.prod.yml exec web python manage.py seed_slider_content --dry-run
+
+Where to manage Events in admin:
+- Open Django Admin
+- Go to Media Slider > Events
+- Add or edit event rows there
+- Set Active off to hide an event from the landing page
 
 Quick rules for the team
 
@@ -143,4 +151,3 @@ If content is not showing:
 - Check that the slot number is correct
 - Check the order fields
 - Refresh the preview after saving
-

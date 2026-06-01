@@ -1,6 +1,6 @@
 # pages/views.py (or wherever home currently lives)
 from django.shortcuts import render
-from media_slider.models import Slider
+from media_slider.models import Event, Slider
 import json
 
 
@@ -36,10 +36,33 @@ def _build_playlist():
     return sliders, json.dumps(playlist)
 
 
+def _build_events():
+    events = (
+        Event.objects.filter(is_active=True)
+        .order_by("position", "event_date", "title")
+    )
+
+    event_payload = []
+    for event in events:
+        date_label = ""
+        if event.event_date:
+            date_label = event.event_date.strftime("%b %d, %Y").replace(" 0", " ")
+        event_payload.append({
+            "title": event.title,
+            "date": date_label,
+            "location": event.location,
+            "link": event.link,
+            "cta_label": event.cta_label or "Get Access",
+        })
+
+    return json.dumps(event_payload)
+
+
 def home(request):
     sliders, playlist_json = _build_playlist()
     return render(request, "index.html", {
         "playlist_json": playlist_json,
+        "events_json": _build_events(),
         "sliders": sliders,
         "preview_slot": None,
     })
@@ -53,6 +76,7 @@ def slider_preview(request, slot: int):
         slot = None
     return render(request, "index.html", {
         "playlist_json": playlist_json,
+        "events_json": _build_events(),
         "sliders": sliders,
         "preview_slot": slot,
     })

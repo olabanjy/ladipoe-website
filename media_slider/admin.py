@@ -5,7 +5,7 @@ from django.utils.html import format_html
 
 from adminsortable2.admin import SortableAdminMixin, SortableInlineAdminMixin
 
-from .models import Slider, SliderItem, DSPLink
+from .models import Event, Slider, SliderItem, DSPLink
 
 
 class DSPLinkInline(SortableInlineAdminMixin, admin.TabularInline):
@@ -76,3 +76,13 @@ class DSPLinkAdmin(SortableAdminMixin, admin.ModelAdmin):
     list_filter = ("is_active",)
     search_fields = ("name", "url")
     ordering = ("position",)
+
+
+@admin.register(Event)
+class EventAdmin(admin.ModelAdmin):
+    list_display = ("position", "title", "event_date", "location", "is_active")
+    list_display_links = ("title",)
+    list_filter = ("is_active",)
+    search_fields = ("title", "location", "link", "cta_label")
+    ordering = ("position", "event_date", "title")
+    list_editable = ("position", "event_date", "location", "is_active")
