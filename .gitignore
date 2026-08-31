@@ -67,3 +67,5 @@ celerybeat.pid
 
 # --
 app/.keys/jwt_private.pem
+
+.venv/

@@ -1,2003 +1,2083 @@
-
-
 {% load static %}
 <!doctype html>
 <html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <link rel="stylesheet" href="https://cdn.materialdesignicons.com/7.3.67/css/materialdesignicons.min.css">
-  <link rel="stylesheet" href=" https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css">
-
- 
-  <title>Ladipoe </title>
-
-  <style>
-    :root{
-      --pad: 48px;
-
-      --text: rgba(255,255,255,.92);
-      --muted: rgba(255,255,255,.55);
-
-      --shadow: 0 10px 30px rgba(0,0,0,.35);
-      --accent: #ffffff;
-
-      --fadeMs: 550ms;
-      --cycleMs: 6000ms;
-
-      --navW: 520px;
-      --navInsetTop: 110px;
-
-      --navYear: rgba(255,255,255,.55);
-      --navInactive: rgba(255,255,255,.33);
-
-      --tabsText: rgba(255,255,255,.70);
-      --tabsActive: rgba(255,255,255,.92);
-
-      --navRevealMs: 240ms;
-      --navRevealEase: cubic-bezier(.2,.8,.2,1);
-
-      /* Stagger reveal for menu blocks */
-      --staggerStep: 70ms;
-      --staggerBaseDelay: 70ms;
-
-      /* Play button (editable) */
-      --playSize: 74px;
-      --playBg: rgba(255,255,255,.95);
-      --playFg: #000;
-      --playShadow: 0 10px 30px rgba(0,0,0,.35);
-
-      /* DSP roller widget (bottom-left) */
-      --dspBg: rgba(255,255,255,.10);
-      --dspBorder: rgba(255,255,255,.14);
-      --dspText: rgba(255,255,255,.92);
-      --dspW: 330px;
-      --dspH: 44px;
-      --dspRadius: 999px;
-      --dspEveryMs: 2600ms;  /* rotation interval */
-      --dspAnimMs: 520ms;    /* rotation animation */
-      --dspLabelOpacity: .78;
-
-      /* YouTube modal glass */
-      --glassBg: rgba(255,255,255,.12);
-      --glassBorder: rgba(255,255,255,.20);
-      --glassBlur: 10px;
-      --modalMaxW: 50%;
-      --modalRadius: 22px;
-
-      /* Safe-area bottom */
-      --safeB: env(safe-area-inset-bottom, 0px);
-    }
-
-    *{ box-sizing:border-box; }
-    html, body{ height:100%; }
-    body{
-      margin:0;
-      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
-      color: var(--text);
-      background:#000;
-      overflow:hidden;
-    }
-
-
-
-/* ===== Revival Countdown ===== */
-.countdown{
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  z-index: 50;
-
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 14px;
-
-  text-align: center;
-  pointer-events: none;
-
-  opacity: 0;
-  transition: opacity 320ms ease;
-}
-
-.countdown--show{
-  opacity: 1;
-}
-
-.countdown__title{
-  font-size: 1em;
-  letter-spacing: .18em;
-  text-transform: uppercase;
-  color: rgba(255,255,255,.75);
-  text-shadow: var(--shadow);
-}
-
-.countdown__time{
-  font-size: clamp(28px, 4vw, 44px);
-  font-weight: 600;
-  letter-spacing: .04em; text-transform: uppercase;
-  color: rgba(255,255,255,.95);
-  text-shadow: var(--shadow);
-}
-
-
-/* Tooltip wrapper */
-.topicon-wrap{
-  position: relative;
-  overflow: visible; /* 🔑 prevent clipping */
-}
-
-/* Ensure button stays clean */
-.tooltip-btn{
-  position: relative;
-  border: none;
-  background: transparent;
-  padding: 0;
-  cursor: pointer;
-}
-
-/* Tooltip bubble */
-.tooltip{
-  position: absolute;
-  right: calc(100% + 12px);
-  top: 50%;
-  transform: translateY(-50%) translateX(6px);
-  white-space: nowrap;
-  z-index: 50; /* 🔑 ensure it floats above UI */
-
-  padding: 8px 12px;
-  font-size: 12px;
-  letter-spacing: .02em;
-  font-weight: 500;
-
-  color: rgba(255,255,255,.92);
-  background: rgba(20,20,20,.65);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-
-  border-radius: 10px;
-  box-shadow: 0 10px 30px rgba(0,0,0,.35);
-
-  opacity: 0;
-  pointer-events: none;
-
-  transition:
-    opacity 160ms ease,
-    transform 160ms ease;
-}
-
-
-
-/* Show on hover / keyboard focus */
-.topicon-wrap:hover .tooltip,
-.topicon-wrap:focus-within .tooltip{
-  opacity: 1;
-  transform: translateY(-50%) translateX(0);
-}
-
-
-
-    /* Use dynamic viewport on mobile (fixes address bar / toolbar jumps) */
-    .stage{ position:relative; height: 100dvh; width:100%; overflow:clip; }
-
-    /* ===== Background crossfade layers ===== */
-    .bg{
-      position:absolute; inset:0;
-      opacity:0;
-      will-change: opacity, transform;
-      transform: scale(1.03);
-      pointer-events:none;
-      z-index: 1;
-    }
-    .bg--a{ opacity:1; }
-    .bg--b{ opacity:0; }
-    .bg--fade-in{ opacity:1; transition: opacity var(--fadeMs) ease; }
-    .bg--fade-out{ opacity:0; transition: opacity var(--fadeMs) ease; }
-
-    .bg video, .bg img{
-      width:100%; height:100%;
-      object-fit:cover;
-      object-position: top center;
-      display:block;
-      background:#000;
-    }
-    .bg .media--video{ display:none; }
-    .bg .media--image{ display:none; }
-    .bg[data-mode="video"] .media--video{ display:block; }
-    .bg[data-mode="image"] .media--image{ display:block; }
-
-    .vignette{
-      position:absolute; inset:0;
-      pointer-events:none;
-      background:
-        radial-gradient(1200px 700px at 70% 40%, rgba(0,0,0,0) 0%, rgba(0,0,0,.35) 55%, rgba(0,0,0,.78) 100%),
-        linear-gradient(to bottom, rgba(0,0,0,.16), rgba(0,0,0,.20) 55%, rgba(0,0,0,.72));
-      z-index: 6;
-    }
-
-    /* ===== Play button overlay (shows only on image-mode nav selections) ===== */
-    .bg-play{
-      position:absolute;
-      left: 50%;
-      top: 50%;
-      transform: translate(-50%, -50%);
-      z-index: 99;
-      width: var(--playSize);
-      height: var(--playSize);
-      border-radius: 999px;
-      border: 0;
-      background: var(--playBg);
-      color: var(--playFg);
-
-      display:none;
-      place-items:center;
-      cursor:pointer;
-      user-select:none;
-      -webkit-tap-highlight-color: transparent;
-    }
-    .bg-play svg{ width: 26px; height: 26px; display:block; }
-    .bg-play:active{ transform: translate(-50%, -50%) scale(.98); }
-    .bg-play--show{ display:grid; }
-
-    /* ===== DSP roller widget (bottom-left) ===== */
-    .dsp{
-      position:absolute;
-      left: var(--pad);
-      bottom: calc(160px + var(--safeB));
-      z-index: 12;
-
-      width: var(--dspW);
-      height: var(--dspH);
-      overflow:hidden;
-
-      display:flex;
-      align-items:center;
-      gap: 10px;
-      padding: 0 14px;
-
-      opacity:0;
-      transform: translateY(10px);
-      pointer-events:none;
-      transition: opacity 240ms var(--navRevealEase), transform 240ms var(--navRevealEase);
-    }
-    .dsp--show{
-      opacity:1;
-      transform: translateY(0);
-      pointer-events:auto;
-    }
-
-    .dsp__label{
-      font-size: 14px;
-      letter-spacing:.01em;
-      color: rgba(255,255,255,var(--dspLabelOpacity));
-      white-space:nowrap;
-      text-shadow: var(--shadow);
-      flex: 0 0 auto;
-    }
-
-    .dsp__viewport{
-      position:relative;
-      height: 100%;
-      flex: 1 1 auto;
-      overflow:hidden;
-      display:flex;
-      align-items:center;
-      left: -5px;
-      min-width: 0;
-      mask-image: linear-gradient(to bottom, transparent 0%, #000 25%, #000 75%, transparent 100%);
-      -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 25%, #000 75%, transparent 100%);
-    }
-
-    .dsp__stack{
-      display:flex;
-      flex-direction:column;
-      will-change: transform;
-      transform: translateY(0px);
-      top: 22px;
-      position: relative;
-      transition: transform var(--dspAnimMs) var(--navRevealEase);
-    }
-
-    .dsp__item{
-      height: var(--dspH);
-      display:flex;
-      align-items:center;
-      text-decoration:none;
-      color: var(--dspText);
-      font-size: 14px;
-      letter-spacing:.01em;
-      white-space:nowrap;
-      overflow:hidden;
-      text-overflow:ellipsis;
-      padding-right: 6px;
-
-      opacity:.35;
-      transform: translateY(10px);
-      transition: opacity 280ms var(--navRevealEase), transform 280ms var(--navRevealEase);
-    }
-    .dsp__item--active{
-      opacity:1;
-      transform: translateY(0px);
-    }
-    .dsp__item:hover{ text-decoration: underline; }
-
-    /* ===== Top header ===== */
-    .topbar{
-      position:absolute; left:0; right:0; top:0;
-      z-index: 3001; /* above modals */
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      padding: 26px var(--pad);
-      pointer-events:auto;
-    }
-    .brand{
-      display:flex; flex-direction:column; gap:2px;
-      letter-spacing:.18em;
-      text-transform:uppercase;
-      font-weight:700;
-      font-size:12px;
-      opacity:.92;
-      text-shadow: var(--shadow);
-    }
-    .brand span:last-child{
-      letter-spacing:.55em;
-      font-weight:600;
-      opacity:.7;
-    }
-    .tabs{
-      display:flex; gap:26px; align-items:center;
-      font-size:14px;
-      letter-spacing:.02em;
-      color: var(--tabsText);
-      text-shadow: var(--shadow);
-      pointer-events:auto;
-    }
-      .topicon{
-      width:34px;
-      height:34px;
-      border-radius:999px;
-      border: 1px solid rgba(255,255,255,.22);
-      background: #fff;
-      display:grid;
-      place-items:center;
- 
-      pointer-events:auto;
-      cursor:pointer;
-      box-shadow: none;
-      color: #000000;
-    }
-
-    /* Tab buttons */
-    .tabbtn{
-      appearance:none;
-      border:0;
-      background: transparent;
-      color: var(--tabsText);
-      font: inherit;
-      cursor: pointer;
-      letter-spacing: .02em;
-      text-shadow: var(--shadow);
-      padding: 8px 2px;
-      text-decoration:none;
-    }
-    .tabbtn--active{ color: var(--tabsActive); }
-    .tabbtn:focus-visible{
-      outline: 2px solid rgba(255,255,255,.65);
-      outline-offset: 4px;
-      border-radius: 10px;
-    }
-
-    a.whitebtn { text-decoration: none; }
-
-    /* ===== Scrim ===== */
-    .navscrim{
-      position:absolute; inset:0;
-      z-index: 10;
-      background:
-        radial-gradient(900px 700px at 70% 45%, rgba(0,0,0,.35), rgba(0,0,0,0) 60%),
-        linear-gradient(to left, rgba(0,0,0,.24), rgba(0,0,0,0) 55%);
-      opacity: 0;
-      pointer-events:none;
-      transition: opacity var(--navRevealMs) var(--navRevealEase);
-    }
-    .navscrim--on{ opacity:1; pointer-events:auto; }
-
-    /* ===== Right nav ===== */
-    .rightnav{
-      position:absolute;
-      right: var(--pad);
-      top: 0;
-      bottom: 0;
-      width: min(var(--navW), calc(100vw - (var(--pad) * 2)));
-      z-index: 11;
-      padding-top: var(--navInsetTop);
-
-      opacity:0;
-      transform: translateY(14px);
-      pointer-events:none;
-      transition:
-        opacity var(--navRevealMs) var(--navRevealEase),
-        transform var(--navRevealMs) var(--navRevealEase);
-    }
-    .rightnav--open{
-      opacity:1;
-      transform: translateY(0);
-      pointer-events:auto;
-    }
-
-    .navscroll{
-      max-width: 520px;
-      margin-left: auto;
-      max-height: calc(100dvh - var(--navInsetTop) - 130px);
-      overflow-y: auto;
-      overscroll-behavior: contain;
-      -webkit-overflow-scrolling: touch;
-      scrollbar-width: none;
-    }
-    .navscroll::-webkit-scrollbar{ width:0; height:0; }
-
-    .navlist{
-      display:flex;
-      flex-direction:column;
-      gap: 22px;
-      padding-right: 2px;
-    }
-    .navblock{
-      display:flex;
-      flex-direction:column;
-      gap: 10px;
-    }
-
-    @keyframes fadeUp{
-      from{ opacity:0; transform: translateY(14px); }
-      to  { opacity:1; transform: translateY(0); }
-    }
-    .navblock.navblock--anim{
-      opacity:0;
-      transform: translateY(14px);
-      animation: fadeUp 420ms var(--navRevealEase) both;
-      animation-delay: calc(var(--staggerBaseDelay) + (var(--i) * var(--staggerStep)));
-      will-change: transform, opacity;
-    }
-
-    .navyear{
-      font-size: 14px;
-      color: var(--navYear);
-      letter-spacing:.02em;
-      text-shadow: var(--shadow);
-    }
-
-    .navitem{
-      display:flex;
-      align-items:center;
-      gap: 14px;
-      border-radius: 12px;
-      padding: 14px 16px;
-      cursor:pointer;
-      user-select:none;
-      outline:none;
-      background: transparent;
-      border: 1px solid transparent;
-      transition: background 140ms ease, border-color 140ms ease, transform 140ms ease, opacity 140ms ease;
-    }
-
-    .navitem__icon{
-      width: 34px;
-      height: 34px;
-      border-radius: 10px;
-      display:grid;
-      place-items:center;
-      background: rgba(255,255,255,.08);
-      border: 1px solid rgba(255,255,255,.14);
-      opacity:0;
-      transform: translateX(-6px);
-      transition: opacity 140ms ease, transform 140ms ease;
-      flex: 0 0 auto;
-    }
-    .navitem__icon::before{
-      content:"▶";
-      font-size: 16px;
-      line-height: 1;
-      color: rgba(255,255,255,.86);
-    }
-    .navitem__main{ min-width:0; flex: 1 1 auto; }
-
-    .navitem__title{
-      font-size: 44px;
-      line-height: 1.05;
-      letter-spacing: .01em;
-      margin:0;
-      white-space:nowrap;
-      overflow:hidden;
-      text-overflow:ellipsis;
-    }
-
-    .navitem__kind{
-      font-size: 14px;
-      color: rgba(255,255,255,.55);
-      margin-top: 8px;
-      letter-spacing:.02em;
-      text-shadow: var(--shadow);
-      left: 3px;
-      position: relative;
-    }
-
-    .navitem__meta{
-      flex: 0 0 auto;
-      font-size: 14px;
-      color: rgba(255,255,255,.55);
-      text-shadow: var(--shadow);
-      margin-left: 10px;
-      display: none;
-      white-space:nowrap;
-      opacity: .95;
-    }
-
-    .navitem--inactive .navitem__title{
-      color: var(--navInactive);
-      font-weight: 500;
-    }
-    .navitem--inactive .navitem__kind{ color: rgba(255,255,255,.28); }
-    .navitem--inactive .navitem__meta{ display:none; }
-
-    .navitem--active{
-      background: rgba(255,255,255,.10);
-      border-color: rgba(255,255,255,.14);
-      backdrop-filter: blur(8px);
-      transform: translateY(-1px);
-    }
-    .navitem--active .navitem__title{ color: rgba(255,255,255,.92); font-weight:600; }
-    .navitem--active .navitem__kind{ color: rgba(255,255,255,.52); }
-    .navitem--active .navitem__icon{ opacity:1; transform: translateX(0); }
-
-    /* ===== Bottom menu ===== */
-    .bottom{
-      position:absolute;
-      left:0; right:0;
-      bottom: calc(22px + var(--safeB));
-      z-index: 12;
-
-      display:flex;
-      align-items:flex-end;
-      justify-content:space-between;
-      gap: clamp(14px, 2.5vw, 56px);
-
-      padding: 0 var(--pad) calc(18px + var(--safeB));
-    }
-    .group{ display:contents; }
-
-    .tile{
-      width: min(260px, 22vw);
-      cursor:pointer;
-      user-select:none;
-      padding: 10px 0 0;
-      border-radius: 10px;
-      transition: opacity 160ms ease, transform 160ms ease, filter 160ms ease;
-      position:relative;
-      outline:none;
-    }
-    .tile:hover{ transform: translateY(-1px); }
-
-    .tile__line{
-      position:absolute;
-      left:0; right:0; top:0;
-      height:2px;
-      background: rgba(255,255,255,.28);
-      border-radius: 999px;
-      overflow:hidden;
-    }
-    .tile__progress{
-      position:absolute;
-      left:0; top:0; bottom:0;
-      width:100%;
-      background: var(--accent);
-      transform: scaleX(0);
-      transform-origin: left center;
-      will-change: transform;
-    }
-    .tile--inactive{ opacity: .45; }
-    .tile--inactive .tile__progress{ transition:none; transform: scaleX(0); }
-    .tile--active{ opacity: 1; }
-    .tile--active .tile__progress{ transition: transform var(--cycleMs) linear; }
-
-    .tile__title{
-      display:block;
-      font-size: 18px;
-      line-height: 1.15;
-      letter-spacing: .02em;
-      text-shadow: var(--shadow);
-      white-space:nowrap;
-      overflow:hidden;
-      text-overflow:ellipsis;
-      margin-top: 12px;
-    }
-    .tile__kind{
-      display:block;
-      margin-top: 6px;
-      font-size: 14px;
-      color: var(--muted);
-      letter-spacing:.02em;
-      white-space:nowrap;
-      overflow:hidden;
-      text-overflow:ellipsis;
-    }
-
-    .bottomfade{
-      position:absolute;
-      left:0; right:0; bottom:0;
-      height: 220px;
-      z-index:11;
-      pointer-events:none;
-      background: linear-gradient(to bottom, rgba(0,0,0,0), rgba(0,0,0,.78));
-    }
-
-    /* ===== YouTube Modal (glass + blur) ===== */
-    .ytmodal{
-      position:fixed;
-      inset:0;
-      z-index: 2000;
-      display:none;
-      align-items:center;
-      justify-content:center;
-      padding: 22px;
-    }
-    .ytmodal--open{ display:flex; }
-
-    .ytmodal__backdrop{
-      position:absolute;
-      inset:0;
-      background: rgba(0,0,0,.40);
-      backdrop-filter: blur(var(--glassBlur));
-      -webkit-backdrop-filter: blur(var(--glassBlur));
-    }
-
-    .ytmodal__panel{
-      position:relative;
-      width: min(var(--modalMaxW), 100%);
-      border-radius: var(--modalRadius);
-      background: var(--glassBg);
-      border: 1px solid var(--glassBorder);
-      box-shadow: 0 30px 80px rgba(0,0,0,.45);
-      overflow:hidden;
-      transform: translateY(8px);
-      opacity: 0;
-      animation: modalIn 240ms var(--navRevealEase) forwards;
-    }
-    @keyframes modalIn{
-      to { transform: translateY(0); opacity: 1; }
-    }
-
-    .ytmodal__top{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      padding: 12px 14px;
-      background: rgba(255,255,255,.06);
-      border-bottom: 1px solid rgba(255,255,255,.14);
-    }
-    .ytmodal__title{
-      font-size: 14px;
-      letter-spacing:.01em;
-      color: rgba(255,255,255,.88);
-      white-space:nowrap;
-      overflow:hidden;
-      text-overflow:ellipsis;
-      padding-right: 10px;
-    }
-    .ytmodal__close{
-      border: 1px solid rgba(255,255,255,.20);
-      background: rgba(255,255,255,.10);
-      color: rgba(255,255,255,.92);
-      width: 38px;
-      height: 38px;
-      border-radius: 12px;
-      cursor:pointer;
-      display:grid;
-      place-items:center;
-      -webkit-tap-highlight-color: transparent;
-    }
-    .ytmodal__close:active{ transform: scale(.98); }
-
-    .ytmodal__body{
-      position:relative;
-      aspect-ratio: 16/9;
-      width:100%;
-      background:#000;
-    }
-    .ytmodal__body iframe{
-      position:absolute;
-      inset:0;
-      width:100%;
-      height:100%;
-      border:0;
-    }
-
-    /* ===== Generic glass modal (Events + Contact) ===== */
-    .glassmodal{
-      position: fixed;
-      inset: 0;
-      z-index: 2000;
-      display: none;
-      align-items: center;
-      justify-content: center;
-      padding: 22px;
-    }
-    .glassmodal--open{ display: flex; }
-
-    .glassmodal__backdrop{
-      position:absolute;
-      inset:0;
-      background: rgba(0,0,0,.35);
-      backdrop-filter: blur(var(--glassBlur));
-      -webkit-backdrop-filter: blur(var(--glassBlur));
-    }
-
-    .glassmodal__panel{
-      position: relative;
-      width: min(var(--modalMaxW), 100%);
-      border-radius: var(--modalRadius);
-      background: none;
-      border: none;
-      box-shadow: none;
-      overflow: hidden;
-      transform: translateY(8px);
-      opacity: 0;
-      animation: modalIn 240ms var(--navRevealEase) forwards;
-    }
-
-    .glassmodal__top{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      padding: 12px 14px;
-      background: none;
-      border-bottom: none;
-    }
-    .glassmodal__title{
-      font-size: 14px;
-      letter-spacing:.01em;
-      color: rgba(255,255,255,.92);
-    }
-    .glassmodal__close{
-      color: rgba(255, 255, 255, .92);
-      width: 38px;
-      background:none;
-      height: 38px;
-      border:none;
-      border-radius: 12px;
-      cursor: pointer;
-      display: grid;
-      place-items: center;
-      -webkit-tap-highlight-color: transparent;
-    }
-    .glassmodal__close:active{ transform: scale(.98); }
-
-    .glassmodal__body{
-      padding: 16px;
-      color: rgba(255,255,255,.92);
-    }
-
-    /* Events list */
-    .events{
-      display:flex;
-      flex-direction:column;
-      gap: 12px;
-    }
-    .events__empty{
-      padding: 16px 4px;
-      color: rgba(255,255,255,.7);
-      font-size: 14px;
-    }
-    .eventrow{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap: 14px;
-      padding: 14px 14px;
-      border-radius: 16px;
-      background: rgba(255,255,255,.06);
-      border: 1px solid rgba(255,255,255,.12);
-    }
-    .eventrow__main{ min-width:0; }
-    .eventrow__title{
-      margin:0;
-      font-size: 16px;
-      letter-spacing:.01em;
-      white-space:nowrap;
-      overflow:hidden;
-      text-overflow:ellipsis;
-    }
-    .eventrow__meta{
-      margin-top: 6px;
-      font-size: 13px;
-      color: rgba(255,255,255,.62);
-    }
-
-    /* White button w/ black text */
-    .whitebtn{
-      border: 0;
-      background: rgba(255,255,255,.95);
-      color: #000;
-      padding: 10px 14px;
-      border-radius: 10px;
-      font-weight: 600;
-      cursor: pointer;
-      white-space: nowrap;
-    }
-    .whitebtn:active{ transform: scale(.98); }
-    .whitebtn:focus-visible{
-      outline: 2px solid rgba(255,255,255,.65);
-      outline-offset: 3px;
-    }
-
-
-
-.socialbtn{
-      border: 1px solid #ffffff40;
-      background: rgb(51 55 54 / 42%);
-      color: #ffffff;
-      backdrop-filter: blur(14px);
-      border-radius: 29px;
-      font-weight: 600; margin-right: 5px;
-      width: 40px;
-      height: 40px;
-      cursor: pointer;
-      white-space: nowrap;
-    }
-
-
-.socialbtn:hover{
-      border: 1px solid #ffffff40;
-      background: #ffffff;
-      color: #000000;
-   
-    }
-
-
-
-    .socialbtn:active{ transform: scale(.98); }
-    .socialbtn:focus-visible{
-      outline: 2px solid rgba(255,255,255,.65);
-      outline-offset: 3px;
-    }
-
-
-    /* Contact form */
-    .cform{
-      display:flex;
-      flex-direction:column;
-      gap: 12px;
-      width: 90%;
-      margin: 0 auto;
-    }
-    .cform__label{
-      display:flex;
-      flex-direction:column;
-      gap: 8px;
-      font-size: 13px;
-      color: rgba(255,255,255,.80);
-    }
-    .cform__input, .cform__textarea{
-      width:100%;
-      border-radius: 14px;
-      border: 1px solid rgba(255,255,255,.18);
-      background: rgba(0,0,0,.20);
-      color: rgba(255,255,255,.92);
-      padding: 12px 12px;
-      font: inherit;
-      outline: none;
-    }
-    .cform__input:focus, .cform__textarea:focus{
-      border-color: rgba(255,255,255,.40);
-    }
-    .cform__actions{
-      display:flex;
-      align-items:center;
-      gap: 12px;
-      margin-top: 4px;
-    }
-    .cform__status{
-      font-size: 13px;
-      color: rgba(255,255,255,.72);
-    }
-
-    @media (max-width: 1100px){
-      :root{
-        --pad: 22px;
-        --navInsetTop: 92px;
-        --playSize: 66px;
-        --dspW: 300px;
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <link
+      rel="stylesheet"
+      href="https://cdn.materialdesignicons.com/7.3.67/css/materialdesignicons.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href=" https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css"
+    />
+
+    <title>Ladipoe</title>
+
+    <style>
+      :root {
+        --pad: 48px;
+
+        --text: rgba(255, 255, 255, 0.92);
+        --muted: rgba(255, 255, 255, 0.55);
+
+        --shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+        --accent: #ffffff;
+
+        --fadeMs: 550ms;
+        --cycleMs: 6000ms;
+
+        --navW: 520px;
+        --navInsetTop: 110px;
+
+        --navYear: rgba(255, 255, 255, 0.55);
+        --navInactive: rgba(255, 255, 255, 0.33);
+
+        --tabsText: rgba(255, 255, 255, 0.7);
+        --tabsActive: rgba(255, 255, 255, 0.92);
+
+        --navRevealMs: 240ms;
+        --navRevealEase: cubic-bezier(0.2, 0.8, 0.2, 1);
+
+        /* Stagger reveal for menu blocks */
+        --staggerStep: 70ms;
+        --staggerBaseDelay: 70ms;
+
+        /* Play button (editable) */
+        --playSize: 74px;
+        --playBg: rgba(255, 255, 255, 0.95);
+        --playFg: #000;
+        --playShadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+
+        /* DSP roller widget (bottom-left) */
+        --dspBg: rgba(255, 255, 255, 0.1);
+        --dspBorder: rgba(255, 255, 255, 0.14);
+        --dspText: rgba(255, 255, 255, 0.92);
+        --dspW: 330px;
+        --dspH: 44px;
+        --dspRadius: 999px;
+        --dspEveryMs: 2600ms; /* rotation interval */
+        --dspAnimMs: 520ms; /* rotation animation */
+        --dspLabelOpacity: 0.78;
+
+        /* YouTube modal glass */
+        --glassBg: rgba(255, 255, 255, 0.12);
+        --glassBorder: rgba(255, 255, 255, 0.2);
+        --glassBlur: 10px;
+        --modalMaxW: 50%;
+        --modalRadius: 22px;
+
+        /* Safe-area bottom */
+        --safeB: env(safe-area-inset-bottom, 0px);
       }
 
-:root{ --modalMaxW: 100%} 
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        height: 100%;
+      }
+      body {
+        margin: 0;
+        font-family:
+          ui-sans-serif,
+          system-ui,
+          -apple-system,
+          Segoe UI,
+          Roboto,
+          Helvetica,
+          Arial;
+        color: var(--text);
+        background: #000;
+        overflow: hidden;
+      }
 
+      /* ===== Revival Countdown ===== */
+      .countdown {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 50;
 
-      .hyde { display:none; }
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 14px;
 
-      /* Mobile bottom bar is scrollable */
-      .bottom{
-        gap: 16px;
-        overflow-x:auto;
-        justify-content:flex-start;
+        text-align: center;
+        pointer-events: none;
+
+        opacity: 0;
+        transition: opacity 320ms ease;
+      }
+
+      .countdown--show {
+        opacity: 1;
+      }
+
+      .countdown__title {
+        font-size: 1em;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: rgba(255, 255, 255, 0.75);
+        text-shadow: var(--shadow);
+      }
+
+      .countdown__time {
+        font-size: clamp(28px, 4vw, 44px);
+        font-weight: 600;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: rgba(255, 255, 255, 0.95);
+        text-shadow: var(--shadow);
+      }
+
+      /* Tooltip wrapper */
+      .topicon-wrap {
+        position: relative;
+        overflow: visible; /* 🔑 prevent clipping */
+      }
+
+      /* Ensure button stays clean */
+      .tooltip-btn {
+        position: relative;
+        border: none;
+        background: transparent;
+        padding: 0;
+        cursor: pointer;
+      }
+
+      /* Tooltip bubble */
+      .tooltip {
+        position: absolute;
+        right: calc(100% + 12px);
+        top: 50%;
+        transform: translateY(-50%) translateX(6px);
+        white-space: nowrap;
+        z-index: 50; /* 🔑 ensure it floats above UI */
+
+        padding: 8px 12px;
+        font-size: 12px;
+        letter-spacing: 0.02em;
+        font-weight: 500;
+
+        color: rgba(255, 255, 255, 0.92);
+        background: rgba(20, 20, 20, 0.65);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+
+        border-radius: 10px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+
+        opacity: 0;
+        pointer-events: none;
+
+        transition:
+          opacity 160ms ease,
+          transform 160ms ease;
+      }
+
+      /* Show on hover / keyboard focus */
+      .topicon-wrap:hover .tooltip,
+      .topicon-wrap:focus-within .tooltip {
+        opacity: 1;
+        transform: translateY(-50%) translateX(0);
+      }
+
+      /* Use dynamic viewport on mobile (fixes address bar / toolbar jumps) */
+      .stage {
+        position: relative;
+        height: 100dvh;
+        width: 100%;
+        overflow: clip;
+      }
+
+      /* ===== Background crossfade layers ===== */
+      .bg {
+        position: absolute;
+        inset: 0;
+        opacity: 0;
+        will-change: opacity, transform;
+        transform: scale(1.03);
+        pointer-events: none;
+        z-index: 1;
+      }
+      .bg--a {
+        opacity: 1;
+      }
+      .bg--b {
+        opacity: 0;
+      }
+      .bg--fade-in {
+        opacity: 1;
+        transition: opacity var(--fadeMs) ease;
+      }
+      .bg--fade-out {
+        opacity: 0;
+        transition: opacity var(--fadeMs) ease;
+      }
+
+      .bg video,
+      .bg img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        object-position: top center;
+        display: block;
+        background: #000;
+      }
+      .bg .media--video {
+        display: none;
+      }
+      .bg .media--image {
+        display: none;
+      }
+      .bg[data-mode="video"] .media--video {
+        display: block;
+      }
+      .bg[data-mode="image"] .media--image {
+        display: block;
+      }
+
+      .vignette {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        background:
+          radial-gradient(
+            1200px 700px at 70% 40%,
+            rgba(0, 0, 0, 0) 0%,
+            rgba(0, 0, 0, 0.35) 55%,
+            rgba(0, 0, 0, 0.78) 100%
+          ),
+          linear-gradient(
+            to bottom,
+            rgba(0, 0, 0, 0.16),
+            rgba(0, 0, 0, 0.2) 55%,
+            rgba(0, 0, 0, 0.72)
+          );
+        z-index: 6;
+      }
+
+      /* ===== Play button overlay (shows only on image-mode nav selections) ===== */
+      .bg-play {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 99;
+        width: var(--playSize);
+        height: var(--playSize);
+        border-radius: 999px;
+        border: 0;
+        background: var(--playBg);
+        color: var(--playFg);
+
+        display: none;
+        place-items: center;
+        cursor: pointer;
+        user-select: none;
+        -webkit-tap-highlight-color: transparent;
+      }
+      .bg-play svg {
+        width: 26px;
+        height: 26px;
+        display: block;
+      }
+      .bg-play:active {
+        transform: translate(-50%, -50%) scale(0.98);
+      }
+      .bg-play--show {
+        display: grid;
+      }
+
+      /* Mobile browsers can block even muted autoplay (for example in Low
+         Power Mode). Give visitors a direct, user-initiated way to recover. */
+      .video-start {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        z-index: 98;
+        display: none;
+        align-items: center;
+        gap: 9px;
+        transform: translate(-50%, -50%);
+        border: 1px solid rgba(255, 255, 255, 0.28);
+        border-radius: 999px;
+        padding: 12px 18px;
+        background: rgba(0, 0, 0, 0.58);
+        color: rgba(255, 255, 255, 0.96);
+        font: inherit;
+        font-size: 14px;
+        cursor: pointer;
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        -webkit-tap-highlight-color: transparent;
+      }
+      .video-start--show {
+        display: flex;
+      }
+      .video-start:active {
+        transform: translate(-50%, -50%) scale(0.98);
+      }
+
+      /* ===== DSP roller widget (bottom-left) ===== */
+      .dsp {
+        position: absolute;
+        left: var(--pad);
+        bottom: calc(160px + var(--safeB));
+        z-index: 12;
+
+        width: var(--dspW);
+        height: var(--dspH);
+        overflow: hidden;
+
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 0 14px;
+
+        opacity: 0;
+        transform: translateY(10px);
+        pointer-events: none;
+        transition:
+          opacity 240ms var(--navRevealEase),
+          transform 240ms var(--navRevealEase);
+      }
+      .dsp--show {
+        opacity: 1;
+        transform: translateY(0);
+        pointer-events: auto;
+      }
+
+      .dsp__label {
+        font-size: 14px;
+        letter-spacing: 0.01em;
+        color: rgba(255, 255, 255, var(--dspLabelOpacity));
+        white-space: nowrap;
+        text-shadow: var(--shadow);
+        flex: 0 0 auto;
+      }
+
+      .dsp__viewport {
+        position: relative;
+        height: 100%;
+        flex: 1 1 auto;
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+        left: -5px;
+        min-width: 0;
+        mask-image: linear-gradient(
+          to bottom,
+          transparent 0%,
+          #000 25%,
+          #000 75%,
+          transparent 100%
+        );
+        -webkit-mask-image: linear-gradient(
+          to bottom,
+          transparent 0%,
+          #000 25%,
+          #000 75%,
+          transparent 100%
+        );
+      }
+
+      .dsp__stack {
+        display: flex;
+        flex-direction: column;
+        will-change: transform;
+        transform: translateY(0px);
+        top: 22px;
+        position: relative;
+        transition: transform var(--dspAnimMs) var(--navRevealEase);
+      }
+
+      .dsp__item {
+        height: var(--dspH);
+        display: flex;
+        align-items: center;
+        text-decoration: none;
+        color: var(--dspText);
+        font-size: 14px;
+        letter-spacing: 0.01em;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        padding-right: 6px;
+
+        opacity: 0.35;
+        transform: translateY(10px);
+        transition:
+          opacity 280ms var(--navRevealEase),
+          transform 280ms var(--navRevealEase);
+      }
+      .dsp__item--active {
+        opacity: 1;
+        transform: translateY(0px);
+      }
+      .dsp__item:hover {
+        text-decoration: underline;
+      }
+
+      /* ===== Top header ===== */
+      .topbar {
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 0;
+        z-index: 3001; /* above modals */
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 26px var(--pad);
+        pointer-events: auto;
+      }
+      .brand {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        font-weight: 700;
+        font-size: 12px;
+        opacity: 0.92;
+        text-shadow: var(--shadow);
+      }
+      .brand span:last-child {
+        letter-spacing: 0.55em;
+        font-weight: 600;
+        opacity: 0.7;
+      }
+      .tabs {
+        display: flex;
+        gap: 26px;
+        align-items: center;
+        font-size: 14px;
+        letter-spacing: 0.02em;
+        color: var(--tabsText);
+        text-shadow: var(--shadow);
+        pointer-events: auto;
+      }
+      .topicon {
+        width: 34px;
+        height: 34px;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.22);
+        background: #fff;
+        display: grid;
+        place-items: center;
+
+        pointer-events: auto;
+        cursor: pointer;
+        box-shadow: none;
+        color: #000000;
+      }
+
+      /* Tab buttons */
+      .tabbtn {
+        appearance: none;
+        border: 0;
+        background: transparent;
+        color: var(--tabsText);
+        font: inherit;
+        cursor: pointer;
+        letter-spacing: 0.02em;
+        text-shadow: var(--shadow);
+        padding: 8px 2px;
+        text-decoration: none;
+      }
+      .tabbtn--active {
+        color: var(--tabsActive);
+      }
+      .tabbtn:focus-visible {
+        outline: 2px solid rgba(255, 255, 255, 0.65);
+        outline-offset: 4px;
+        border-radius: 10px;
+      }
+
+      a.whitebtn {
+        text-decoration: none;
+      }
+
+      /* ===== Scrim ===== */
+      .navscrim {
+        position: absolute;
+        inset: 0;
+        z-index: 10;
+        background:
+          radial-gradient(
+            900px 700px at 70% 45%,
+            rgba(0, 0, 0, 0.35),
+            rgba(0, 0, 0, 0) 60%
+          ),
+          linear-gradient(to left, rgba(0, 0, 0, 0.24), rgba(0, 0, 0, 0) 55%);
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity var(--navRevealMs) var(--navRevealEase);
+      }
+      .navscrim--on {
+        opacity: 1;
+        pointer-events: auto;
+      }
+
+      /* ===== Right nav ===== */
+      .rightnav {
+        position: absolute;
+        right: var(--pad);
+        top: 0;
+        bottom: 0;
+        width: min(var(--navW), calc(100vw - (var(--pad) * 2)));
+        z-index: 11;
+        padding-top: var(--navInsetTop);
+
+        opacity: 0;
+        transform: translateY(14px);
+        pointer-events: none;
+        transition:
+          opacity var(--navRevealMs) var(--navRevealEase),
+          transform var(--navRevealMs) var(--navRevealEase);
+      }
+      .rightnav--open {
+        opacity: 1;
+        transform: translateY(0);
+        pointer-events: auto;
+      }
+
+      .navscroll {
+        max-width: 520px;
+        margin-left: auto;
+        max-height: calc(100dvh - var(--navInsetTop) - 130px);
+        overflow-y: auto;
+        overscroll-behavior: contain;
         -webkit-overflow-scrolling: touch;
-        padding-bottom: calc(14px + var(--safeB));
-        bottom: calc(14px + var(--safeB));
-        scroll-snap-type: x mandatory;
-
-        /* hide scrollbar (mobile + desktop engines) */
-        -ms-overflow-style: none;  /* IE/old Edge */
-        scrollbar-width: none;     /* Firefox */
+        scrollbar-width: none;
       }
-      .bottom::-webkit-scrollbar{ display:none; width:0; height:0; }
+      .navscroll::-webkit-scrollbar {
+        width: 0;
+        height: 0;
+      }
 
-      .tile{ width: 240px; flex: 0 0 auto; scroll-snap-align: center; }
+      .navlist {
+        display: flex;
+        flex-direction: column;
+        gap: 22px;
+        padding-right: 2px;
+      }
+      .navblock {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
 
-      .navitem__title{ font-size: 36px; }
-      .topbar{ padding: 18px var(--pad); }
-      .navscroll{ max-height: calc(100dvh - var(--navInsetTop) - 170px); }
-      .dsp{ bottom: calc(135px + var(--safeB)); }
+      @keyframes fadeUp {
+        from {
+          opacity: 0;
+          transform: translateY(14px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      .navblock.navblock--anim {
+        opacity: 0;
+        transform: translateY(14px);
+        animation: fadeUp 420ms var(--navRevealEase) both;
+        animation-delay: calc(
+          var(--staggerBaseDelay) + (var(--i) * var(--staggerStep))
+        );
+        will-change: transform, opacity;
+      }
 
-      /* Make the overlay tall enough on mobile */
-      .bottomfade{
-        height: clamp(260px, 40vh, 520px);
+      .navyear {
+        font-size: 14px;
+        color: var(--navYear);
+        letter-spacing: 0.02em;
+        text-shadow: var(--shadow);
+      }
+
+      .navitem {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        border-radius: 12px;
+        padding: 14px 16px;
+        cursor: pointer;
+        user-select: none;
+        outline: none;
+        background: transparent;
+        border: 1px solid transparent;
+        transition:
+          background 140ms ease,
+          border-color 140ms ease,
+          transform 140ms ease,
+          opacity 140ms ease;
+      }
+
+      .navitem__icon {
+        width: 34px;
+        height: 34px;
+        border-radius: 10px;
+        display: grid;
+        place-items: center;
+        background: rgba(255, 255, 255, 0.08);
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        opacity: 0;
+        transform: translateX(-6px);
+        transition:
+          opacity 140ms ease,
+          transform 140ms ease;
+        flex: 0 0 auto;
+      }
+      .navitem__icon::before {
+        content: "▶";
+        font-size: 16px;
+        line-height: 1;
+        color: rgba(255, 255, 255, 0.86);
+      }
+      .navitem__main {
+        min-width: 0;
+        flex: 1 1 auto;
+      }
+
+      .navitem__title {
+        font-size: 44px;
+        line-height: 1.05;
+        letter-spacing: 0.01em;
+        margin: 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .navitem__kind {
+        font-size: 14px;
+        color: rgba(255, 255, 255, 0.55);
+        margin-top: 8px;
+        letter-spacing: 0.02em;
+        text-shadow: var(--shadow);
+        left: 3px;
+        position: relative;
+      }
+
+      .navitem__meta {
+        flex: 0 0 auto;
+        font-size: 14px;
+        color: rgba(255, 255, 255, 0.55);
+        text-shadow: var(--shadow);
+        margin-left: 10px;
+        display: none;
+        white-space: nowrap;
+        opacity: 0.95;
+      }
+
+      .navitem--inactive .navitem__title {
+        color: var(--navInactive);
+        font-weight: 500;
+      }
+      .navitem--inactive .navitem__kind {
+        color: rgba(255, 255, 255, 0.28);
+      }
+      .navitem--inactive .navitem__meta {
+        display: none;
+      }
+
+      .navitem--active {
+        background: rgba(255, 255, 255, 0.1);
+        border-color: rgba(255, 255, 255, 0.14);
+        backdrop-filter: blur(8px);
+        transform: translateY(-1px);
+      }
+      .navitem--active .navitem__title {
+        color: rgba(255, 255, 255, 0.92);
+        font-weight: 600;
+      }
+      .navitem--active .navitem__kind {
+        color: rgba(255, 255, 255, 0.52);
+      }
+      .navitem--active .navitem__icon {
+        opacity: 1;
+        transform: translateX(0);
+      }
+
+      /* ===== Bottom menu ===== */
+      .bottom {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: calc(22px + var(--safeB));
+        z-index: 12;
+
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: clamp(14px, 2.5vw, 56px);
+
+        padding: 0 var(--pad) calc(18px + var(--safeB));
+      }
+      .group {
+        display: contents;
+      }
+
+      .tile {
+        width: min(260px, 22vw);
+        cursor: pointer;
+        user-select: none;
+        padding: 10px 0 0;
+        border-radius: 10px;
+        transition:
+          opacity 160ms ease,
+          transform 160ms ease,
+          filter 160ms ease;
+        position: relative;
+        outline: none;
+      }
+      .tile:hover {
+        transform: translateY(-1px);
+      }
+
+      .tile__line {
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 0;
+        height: 2px;
+        background: rgba(255, 255, 255, 0.28);
+        border-radius: 999px;
+        overflow: hidden;
+      }
+      .tile__progress {
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 100%;
+        background: var(--accent);
+        transform: scaleX(0);
+        transform-origin: left center;
+        will-change: transform;
+      }
+      .tile--inactive {
+        opacity: 0.45;
+      }
+      .tile--inactive .tile__progress {
+        transition: none;
+        transform: scaleX(0);
+      }
+      .tile--active {
+        opacity: 1;
+      }
+      .tile--active .tile__progress {
+        transition: transform var(--cycleMs) linear;
+      }
+
+      .tile__title {
+        display: block;
+        font-size: 18px;
+        line-height: 1.15;
+        letter-spacing: 0.02em;
+        text-shadow: var(--shadow);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        margin-top: 12px;
+      }
+      .tile__kind {
+        display: block;
+        margin-top: 6px;
+        font-size: 14px;
+        color: var(--muted);
+        letter-spacing: 0.02em;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .bottomfade {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        height: 220px;
+        z-index: 11;
+        pointer-events: none;
         background: linear-gradient(
           to bottom,
-          rgba(0,0,0,0) 0%,
-          rgba(0,0,0,.55) 40%,
-          rgba(0,0,0,.90) 100%
+          rgba(0, 0, 0, 0),
+          rgba(0, 0, 0, 0.78)
         );
       }
-    }
 
-    @media (prefers-reduced-motion: reduce){
-      :root{
-        --fadeMs: 0ms; --navRevealMs: 0ms;
-        --staggerStep: 0ms; --staggerBaseDelay: 0ms;
-        --dspAnimMs: 0ms;
+      /* ===== YouTube Modal (glass + blur) ===== */
+      .ytmodal {
+        position: fixed;
+        inset: 0;
+        z-index: 2000;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 22px;
       }
-      .bg{ transform:none; }
-      .tile--active .tile__progress{ transition-duration: 0ms; }
-      .navblock.navblock--anim{ animation-duration: 0ms; }
-      .dsp__stack{ transition-duration: 0ms; }
-      .ytmodal__panel{ animation-duration: 0ms; }
-      .glassmodal__panel{ animation-duration: 0ms; }
-    }
-  </style>
-</head>
+      .ytmodal--open {
+        display: flex;
+      }
 
-<body>
-  <div class="stage" id="stage" data-mode="video">
-    <div class="countdown" id="revivalCountdown" aria-hidden="true">
-  <div class="countdown__title">Countdown to Revival</div>
-  <div class="countdown__time" id="countdownTime" aria-live="polite"></div>
-</div>
+      .ytmodal__backdrop {
+        position: absolute;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.4);
+        backdrop-filter: blur(var(--glassBlur));
+        -webkit-backdrop-filter: blur(var(--glassBlur));
+      }
 
-    <!-- Background layers -->
-    <div class="bg bg--a" id="bgA" data-mode="video">
-      <video class="media--video" id="vidA" muted playsinline webkit-playsinline autoplay loop preload="auto"></video>
-      <img class="media--image" id="imgA" alt="" />
-    </div>
-    <div class="bg bg--b" id="bgB" data-mode="video">
-      <video class="media--video" id="vidB" muted playsinline webkit-playsinline autoplay loop preload="auto"></video>
-      <img class="media--image" id="imgB" alt="" />
-    </div>
+      .ytmodal__panel {
+        position: relative;
+        width: min(var(--modalMaxW), 100%);
+        border-radius: var(--modalRadius);
+        background: var(--glassBg);
+        border: 1px solid var(--glassBorder);
+        box-shadow: 0 30px 80px rgba(0, 0, 0, 0.45);
+        overflow: hidden;
+        transform: translateY(8px);
+        opacity: 0;
+        animation: modalIn 240ms var(--navRevealEase) forwards;
+      }
+      @keyframes modalIn {
+        to {
+          transform: translateY(0);
+          opacity: 1;
+        }
+      }
 
-    <div class="vignette"></div>
+      .ytmodal__top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 12px 14px;
+        background: rgba(255, 255, 255, 0.06);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.14);
+      }
+      .ytmodal__title {
+        font-size: 14px;
+        letter-spacing: 0.01em;
+        color: rgba(255, 255, 255, 0.88);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        padding-right: 10px;
+      }
+      .ytmodal__close {
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        background: rgba(255, 255, 255, 0.1);
+        color: rgba(255, 255, 255, 0.92);
+        width: 38px;
+        height: 38px;
+        border-radius: 12px;
+        cursor: pointer;
+        display: grid;
+        place-items: center;
+        -webkit-tap-highlight-color: transparent;
+      }
+      .ytmodal__close:active {
+        transform: scale(0.98);
+      }
 
-    <!-- Play button: opens YouTube modal for CURRENT nav item -->
-    <button class="bg-play" id="bgPlayBtn" aria-label="Play">
-      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-        <path fill="currentColor" d="M8 5v14l11-7z"></path>
-      </svg>
-    </button>
+      .ytmodal__body {
+        position: relative;
+        aspect-ratio: 16/9;
+        width: 100%;
+        background: #000;
+      }
+      .ytmodal__body iframe {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        border: 0;
+      }
 
-    <!-- DSP roller (Listen on [DSP]) -->
-    <div class="dsp" id="dspWidget" aria-label="Listen links">
-      <div class="dsp__label">Listen on</div>
-      <div class="dsp__viewport">
-        <div class="dsp__stack" id="dspStack"></div>
-      </div>
-    </div>
+      /* ===== Generic glass modal (Events + Contact) ===== */
+      .glassmodal {
+        position: fixed;
+        inset: 0;
+        z-index: 2000;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 22px;
+      }
+      .glassmodal--open {
+        display: flex;
+      }
 
-    <!-- Top header -->
-    <header class="topbar">
-      <div class="brand"><span>LADI<span>POE</span></span></div>
-      <div class="tabs" aria-label="Primary">
-        <button class="tabbtn" type="button" id="tabEvents">Events</button>
-        <a class="tabbtn" href="https://shop.mavinrecords.com/product/revival-chosen-with-logo-tshirt/" target="_blank" rel="noopener noreferrer">Merch</a>
-        <button class="tabbtn" type="button" id="tabConnect">Connect</button>
-      </div>
-<a
-  href="https://www.instagram.com/YOUR_HANDLE"
-  target="_blank"
-  rel="noopener noreferrer"
-  class="topicon topicon-wrap hyde"
-  aria-label="Join the lifelines on Instagram"
->
-  <span class="mdi mdi-account-group-outline"></span>
-  <span class="tooltip">Join the lifelines</span>
-</a>
+      .glassmodal__backdrop {
+        position: absolute;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.35);
+        backdrop-filter: blur(var(--glassBlur));
+        -webkit-backdrop-filter: blur(var(--glassBlur));
+      }
 
-    </header>
+      .glassmodal__panel {
+        position: relative;
+        width: min(var(--modalMaxW), 100%);
+        border-radius: var(--modalRadius);
+        background: none;
+        border: none;
+        box-shadow: none;
+        overflow: hidden;
+        transform: translateY(8px);
+        opacity: 0;
+        animation: modalIn 240ms var(--navRevealEase) forwards;
+      }
 
-    <!-- Scrim + Right nav -->
-    <div class="navscrim" id="navScrim" aria-hidden="true"></div>
-    <aside class="rightnav" id="rightNav" aria-label="Navigation"></aside>
+      .glassmodal__top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 12px 14px;
+        background: none;
+        border-bottom: none;
+      }
+      .glassmodal__title {
+        font-size: 14px;
+        letter-spacing: 0.01em;
+        color: rgba(255, 255, 255, 0.92);
+      }
+      .glassmodal__close {
+        color: rgba(255, 255, 255, 0.92);
+        width: 38px;
+        background: none;
+        height: 38px;
+        border: none;
+        border-radius: 12px;
+        cursor: pointer;
+        display: grid;
+        place-items: center;
+        -webkit-tap-highlight-color: transparent;
+      }
+      .glassmodal__close:active {
+        transform: scale(0.98);
+      }
 
-    <!-- Bottom nav -->
-    <aside class="bottom" id="bottomBar" aria-label="Autoplay menu">
-      <div class="group" id="bottomMenu">
-        {% for slider in sliders %}
+      .glassmodal__body {
+        padding: 16px;
+        color: rgba(255, 255, 255, 0.92);
+      }
+
+      /* Events list */
+      .events {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+      .events__empty {
+        padding: 16px 4px;
+        color: rgba(255, 255, 255, 0.7);
+        font-size: 14px;
+      }
+      .eventrow {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 14px;
+        padding: 14px 14px;
+        border-radius: 16px;
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+      }
+      .eventrow__main {
+        min-width: 0;
+      }
+      .eventrow__title {
+        margin: 0;
+        font-size: 16px;
+        letter-spacing: 0.01em;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .eventrow__meta {
+        margin-top: 6px;
+        font-size: 13px;
+        color: rgba(255, 255, 255, 0.62);
+      }
+
+      /* White button w/ black text */
+      .whitebtn {
+        border: 0;
+        background: rgba(255, 255, 255, 0.95);
+        color: #000;
+        padding: 10px 14px;
+        border-radius: 10px;
+        font-weight: 600;
+        cursor: pointer;
+        white-space: nowrap;
+      }
+      .whitebtn:active {
+        transform: scale(0.98);
+      }
+      .whitebtn:focus-visible {
+        outline: 2px solid rgba(255, 255, 255, 0.65);
+        outline-offset: 3px;
+      }
+
+      .socialbtn {
+        border: 1px solid #ffffff40;
+        background: rgb(51 55 54 / 42%);
+        color: #ffffff;
+        backdrop-filter: blur(14px);
+        border-radius: 29px;
+        font-weight: 600;
+        margin-right: 5px;
+        width: 40px;
+        height: 40px;
+        cursor: pointer;
+        white-space: nowrap;
+      }
+
+      .socialbtn:hover {
+        border: 1px solid #ffffff40;
+        background: #ffffff;
+        color: #000000;
+      }
+
+      .socialbtn:active {
+        transform: scale(0.98);
+      }
+      .socialbtn:focus-visible {
+        outline: 2px solid rgba(255, 255, 255, 0.65);
+        outline-offset: 3px;
+      }
+
+      /* Contact form */
+      .cform {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        width: 90%;
+        margin: 0 auto;
+      }
+      .cform__label {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        font-size: 13px;
+        color: rgba(255, 255, 255, 0.8);
+      }
+      .cform__input,
+      .cform__textarea {
+        width: 100%;
+        border-radius: 14px;
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        background: rgba(0, 0, 0, 0.2);
+        color: rgba(255, 255, 255, 0.92);
+        padding: 12px 12px;
+        font: inherit;
+        outline: none;
+      }
+      .cform__input:focus,
+      .cform__textarea:focus {
+        border-color: rgba(255, 255, 255, 0.4);
+      }
+      .cform__actions {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-top: 4px;
+      }
+      .cform__status {
+        font-size: 13px;
+        color: rgba(255, 255, 255, 0.72);
+      }
+
+      @media (max-width: 1100px) {
+        :root {
+          --pad: 22px;
+          --navInsetTop: 92px;
+          --playSize: 66px;
+          --dspW: 300px;
+        }
+
+        :root {
+          --modalMaxW: 100%;
+        }
+
+        .hyde {
+          display: none;
+        }
+
+        /* Mobile bottom bar is scrollable */
+        .bottom {
+          gap: 16px;
+          overflow-x: auto;
+          justify-content: flex-start;
+          -webkit-overflow-scrolling: touch;
+          padding-bottom: calc(14px + var(--safeB));
+          bottom: calc(14px + var(--safeB));
+          scroll-snap-type: x mandatory;
+
+          /* hide scrollbar (mobile + desktop engines) */
+          -ms-overflow-style: none; /* IE/old Edge */
+          scrollbar-width: none; /* Firefox */
+        }
+        .bottom::-webkit-scrollbar {
+          display: none;
+          width: 0;
+          height: 0;
+        }
+
+        .tile {
+          width: 240px;
+          flex: 0 0 auto;
+          scroll-snap-align: center;
+        }
+
+        .navitem__title {
+          font-size: 36px;
+        }
+        .topbar {
+          padding: 18px var(--pad);
+        }
+        .navscroll {
+          max-height: calc(100dvh - var(--navInsetTop) - 170px);
+        }
+        .dsp {
+          bottom: calc(135px + var(--safeB));
+        }
+
+        /* Make the overlay tall enough on mobile */
+        .bottomfade {
+          height: clamp(260px, 40vh, 520px);
+          background: linear-gradient(
+            to bottom,
+            rgba(0, 0, 0, 0) 0%,
+            rgba(0, 0, 0, 0.55) 40%,
+            rgba(0, 0, 0, 0.9) 100%
+          );
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        :root {
+          --fadeMs: 0ms;
+          --navRevealMs: 0ms;
+          --staggerStep: 0ms;
+          --staggerBaseDelay: 0ms;
+          --dspAnimMs: 0ms;
+        }
+        .bg {
+          transform: none;
+        }
+        .tile--active .tile__progress {
+          transition-duration: 0ms;
+        }
+        .navblock.navblock--anim {
+          animation-duration: 0ms;
+        }
+        .dsp__stack {
+          transition-duration: 0ms;
+        }
+        .ytmodal__panel {
+          animation-duration: 0ms;
+        }
+        .glassmodal__panel {
+          animation-duration: 0ms;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="stage" id="stage" data-mode="video">
+      <div class="countdown" id="revivalCountdown" aria-hidden="true">
+        <div class="countdown__title">Countdown to Revival</div>
         <div
-          class="tile {% if preview_slot is not None and slider.slot == preview_slot %}tile--active{% elif preview_slot is None and forloop.first %}tile--active{% else %}tile--inactive{% endif %}"
-          role="button"
-          tabindex="0"
-          data-index="{{ slider.slot }}"
-          data-video="{{ slider.get_video }}"
+          class="countdown__time"
+          id="countdownTime"
+          aria-live="polite"
+        ></div>
+      </div>
+
+      <!-- Background layers -->
+      <div class="bg bg--a" id="bgA" data-mode="video">
+        <video
+          class="media--video"
+          id="vidA"
+          muted
+          playsinline
+          webkit-playsinline
+          autoplay
+          loop
+          preload="auto"
+        ></video>
+        <img class="media--image" id="imgA" alt="" />
+      </div>
+      <div class="bg bg--b" id="bgB" data-mode="video">
+        <video
+          class="media--video"
+          id="vidB"
+          muted
+          playsinline
+          webkit-playsinline
+          autoplay
+          loop
+          preload="auto"
+        ></video>
+        <img class="media--image" id="imgB" alt="" />
+      </div>
+
+      <div class="vignette"></div>
+
+      <!-- Play button: opens YouTube modal for CURRENT nav item -->
+      <button class="bg-play" id="bgPlayBtn" aria-label="Play">
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path fill="currentColor" d="M8 5v14l11-7z"></path>
+        </svg>
+      </button>
+
+      <button
+        class="video-start"
+        id="videoStartBtn"
+        type="button"
+        aria-label="Play background video"
+      >
+        <span aria-hidden="true">▶</span>
+        <span>Tap to play</span>
+      </button>
+
+      <!-- DSP roller (Listen on [DSP]) -->
+      <div class="dsp" id="dspWidget" aria-label="Listen links">
+        <div class="dsp__label">Listen on</div>
+        <div class="dsp__viewport">
+          <div class="dsp__stack" id="dspStack"></div>
+        </div>
+      </div>
+
+      <!-- Top header -->
+      <header class="topbar">
+        <div class="brand">
+          <span>LADI<span>POE</span></span>
+        </div>
+        <div class="tabs" aria-label="Primary">
+          <button class="tabbtn" type="button" id="tabEvents">Events</button>
+          <a
+            class="tabbtn"
+            href="https://shop.mavinrecords.com/product-category/artists/ladipoe/"
+            target="_blank"
+            rel="noopener noreferrer"
+            >Merch</a
+          >
+          <button class="tabbtn" type="button" id="tabConnect">Connect</button>
+        </div>
+        <a
+          href="https://chat.whatsapp.com/I2CErL6auSp8fyl6Fh7Rlr"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="topicon topicon-wrap hyde"
+          aria-label="Join the Lifelines"
         >
-          <div class="tile__line"><div class="tile__progress"></div></div>
-          <div>
-            <span class="tile__title">{{ slider.title }}</span>
-            <span class="tile__kind">{{ slider.kind }}</span>
+          <span class="mdi mdi-account-group-outline"></span>
+          <span class="tooltip">Join the lifelines</span>
+        </a>
+      </header>
+
+      <!-- Scrim + Right nav -->
+      <div class="navscrim" id="navScrim" aria-hidden="true"></div>
+      <aside class="rightnav" id="rightNav" aria-label="Navigation"></aside>
+
+      <!-- Bottom nav -->
+      <aside class="bottom" id="bottomBar" aria-label="Autoplay menu">
+        <div class="group" id="bottomMenu">
+          {% for slider in sliders %}
+          <div
+            class="tile {% if preview_slot is not None and slider.slot == preview_slot %}tile--active{% elif preview_slot is None and forloop.first %}tile--active{% else %}tile--inactive{% endif %}"
+            role="button"
+            tabindex="0"
+            data-index="{{ slider.slot }}"
+            data-video="{{ slider.get_video }}"
+          >
+            <div class="tile__line"><div class="tile__progress"></div></div>
+            <div>
+              <span class="tile__title">{{ slider.title }}</span>
+              <span class="tile__kind">{{ slider.kind }}</span>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </aside>
+
+      <div class="bottomfade"></div>
+    </div>
+
+    <!-- YouTube modal -->
+    <div
+      class="ytmodal"
+      id="ytModal"
+      role="dialog"
+      aria-modal="true"
+      aria-hidden="true"
+    >
+      <div class="ytmodal__backdrop" id="ytBackdrop"></div>
+      <div class="ytmodal__panel" role="document">
+        <div class="ytmodal__top">
+          <div class="ytmodal__title" id="ytTitle">Now Playing</div>
+          <button class="ytmodal__close" id="ytCloseBtn" aria-label="Close">
+            ✕
+          </button>
+        </div>
+        <div class="ytmodal__body">
+          <iframe
+            id="ytFrame"
+            title="YouTube player"
+            allow="autoplay; encrypted-media; picture-in-picture; web-share"
+            referrerpolicy="strict-origin-when-cross-origin"
+            allowfullscreen
+          ></iframe>
+        </div>
+      </div>
+    </div>
+
+    <!-- Events modal -->
+    <div
+      class="glassmodal"
+      id="eventsModal"
+      role="dialog"
+      aria-modal="true"
+      aria-hidden="true"
+    >
+      <div class="glassmodal__backdrop"></div>
+      <div class="glassmodal__panel" role="document" aria-label="Events">
+        <div class="glassmodal__top">
+          <div class="glassmodal__title"></div>
+          <button class="glassmodal__close" type="button" aria-label="Close">
+            ✕
+          </button>
+        </div>
+        <div class="glassmodal__body" id="eventsList"></div>
+      </div>
+    </div>
+
+    <!-- Contact modal -->
+    <div
+      class="glassmodal"
+      id="contactModal"
+      role="dialog"
+      aria-modal="true"
+      aria-hidden="true"
+    >
+      <div class="glassmodal__backdrop"></div>
+      <div class="glassmodal__panel" role="document" aria-label="Contact">
+        <div class="glassmodal__top">
+          <div class="glassmodal__title"></div>
+          <button class="glassmodal__close" type="button" aria-label="Close">
+            ✕
+          </button>
+        </div>
+
+        <div class="glassmodal__body">
+          <form class="cform" id="contactForm">
+            <label class="cform__label">
+              <input
+                class="cform__input"
+                type="email"
+                name="email"
+                required
+                placeholder="you@ladipoe.com"
+              />
+            </label>
+
+            <label style="margin-top: 1em" class="cform__label">
+              <textarea
+                class="cform__textarea"
+                name="message"
+                rows="5"
+                required
+                placeholder="Type your message..."
+              ></textarea>
+            </label>
+
+            <div class="cform__actions">
+              <button class="whitebtn" type="submit">Send</button>
+
+              <span
+                class="cform__status"
+                id="contactStatus"
+                aria-live="polite"
+              ></span>
+            </div>
+          </form>
+
+          <div style="width: 90%; margin: 0 auto; padding-top: 2em">
+            <button class="socialbtn">
+              <span class="mdi mdi-account-group-outline"></span>
+            </button>
+            <button class="socialbtn">
+              <span class="fa-brands fa-x-twitter"></span>
+            </button>
+            <button class="socialbtn">
+              <span class="mdi mdi-instagram"></span>
+            </button>
+            <button class="socialbtn">
+              <span class="mdi mdi-whatsapp"></span>
+            </button>
+            <button class="socialbtn">
+              <span class="mdi mdi-facebook"></span>
+            </button>
           </div>
         </div>
-      {% endfor %}
-      </div>
-    </aside>
-
-    <div class="bottomfade"></div>
-  </div>
-
-  <!-- YouTube modal -->
-  <div class="ytmodal" id="ytModal" role="dialog" aria-modal="true" aria-hidden="true">
-    <div class="ytmodal__backdrop" id="ytBackdrop"></div>
-    <div class="ytmodal__panel" role="document">
-      <div class="ytmodal__top">
-        <div class="ytmodal__title" id="ytTitle">Now Playing</div>
-        <button class="ytmodal__close" id="ytCloseBtn" aria-label="Close">✕</button>
-      </div>
-      <div class="ytmodal__body">
-        <iframe id="ytFrame"
-                title="YouTube player"
-                allow="autoplay; encrypted-media; picture-in-picture; web-share"
-                referrerpolicy="strict-origin-when-cross-origin"
-                allowfullscreen></iframe>
       </div>
     </div>
-  </div>
 
-  <!-- Events modal -->
-  <div class="glassmodal" id="eventsModal" role="dialog" aria-modal="true" aria-hidden="true">
-    <div class="glassmodal__backdrop"></div>
-    <div class="glassmodal__panel" role="document" aria-label="Events">
-      <div class="glassmodal__top">
-        <div class="glassmodal__title"></div>
-        <button class="glassmodal__close" type="button" aria-label="Close">✕</button>
-      </div>
-      <div class="glassmodal__body" id="eventsList"></div>
-    </div>
-  </div>
+    <!-- Data -->
+    <script type="application/json" id="playlistData">
+      {{ playlist_json|safe }}
+    </script>
+    <script type="application/json" id="eventsData">
+      {{ events_json|safe }}
+    </script>
 
-  <!-- Contact modal -->
-  <div class="glassmodal" id="contactModal" role="dialog" aria-modal="true" aria-hidden="true">
-    <div class="glassmodal__backdrop"></div>
-    <div class="glassmodal__panel" role="document" aria-label="Contact">
-      <div class="glassmodal__top">
-        <div class="glassmodal__title"></div>
-        <button class="glassmodal__close" type="button" aria-label="Close">✕</button>
-      </div>
-
-      <div class="glassmodal__body">
-        <form class="cform" id="contactForm">
-          <label class="cform__label">
-       
-            <input class="cform__input" type="email" name="email" required placeholder="you@ladipoe.com" />
-          </label>
-
-          <label style="margin-top: 1em;" class="cform__label">
-       
-            <textarea class="cform__textarea" name="message" rows="5" required placeholder="Type your message..."></textarea>
-          </label>
-
-          <div class="cform__actions">
-            <button class="whitebtn" type="submit">Send</button>
-     
-            <span class="cform__status" id="contactStatus" aria-live="polite"></span>
-          </div>
-
-
-        </form>
-
-
-  <div style="width: 90%;margin: 0 auto; padding-top: 2em;">
-     <button class="socialbtn" ><span class="mdi mdi-account-group-outline"></span></button> <button class="socialbtn" ><span class="fa-brands fa-x-twitter"></span></button> <button class="socialbtn" ><span class="mdi mdi-instagram"></span></button>  <button class="socialbtn" ><span class="mdi mdi-whatsapp"></span></button>  <button class="socialbtn" ><span class="mdi mdi-facebook"></span></button>
-   </div>
-
-    </div>
-
-
-    </div>
-  </div>
-
-  <!-- Data -->
-  <script type="application/json" id="playlistData">
-    {{ playlist_json|safe }}
-  </script>
-  <script type="application/json" id="eventsData">
-    {{ events_json|safe }}
-  </script>
-
- <script>
-  (function () {
-    var CYCLE_MS = 6000;
-    document.documentElement.style.setProperty("--cycleMs", CYCLE_MS + "ms");
-
-    // ===== DOM
-    var stage = document.getElementById("stage");
-
-    var bgA = document.getElementById("bgA");
-    var bgB = document.getElementById("bgB");
-    var vidA = document.getElementById("vidA");
-    var vidB = document.getElementById("vidB");
-    var imgA = document.getElementById("imgA");
-    var imgB = document.getElementById("imgB");
-
-    var bottomBar = document.getElementById("bottomBar");
-    var bottomMenu = document.getElementById("bottomMenu");
-
-    var rightNav = document.getElementById("rightNav");
-    var navScrim = document.getElementById("navScrim");
-
-    var playBtn = document.getElementById("bgPlayBtn");
-
-    var dspWidget = document.getElementById("dspWidget");
-    var dspStack = document.getElementById("dspStack");
-
-    var ytModal = document.getElementById("ytModal");
-    var ytFrame = document.getElementById("ytFrame");
-    var ytBackdrop = document.getElementById("ytBackdrop");
-    var ytCloseBtn = document.getElementById("ytCloseBtn");
-    var ytTitle = document.getElementById("ytTitle");
-
-    // ===== Header tabs
-    var tabEventsBtn = document.getElementById("tabEvents");
-    var tabConnectBtn = document.getElementById("tabConnect");
-
-    // ===== DATA
-    var NAV_MAP = [];
-    try {
-      NAV_MAP = JSON.parse(document.getElementById("playlistData").textContent || "[]");
-    } catch (e) {
-      NAV_MAP = [];
-    }
-
-    // Build slot -> entry map (because slots may be non-contiguous / not zero-based)
-    var NAV_BY_SLOT = {};
-    for (var _i = 0; _i < NAV_MAP.length; _i++) {
-      var _e = NAV_MAP[_i];
-      if (_e && _e.slot !== undefined && _e.slot !== null) {
-        NAV_BY_SLOT[Number(_e.slot)] = _e;
-      }
-    }
-    function entryForSlot(slot) {
-      if (NAV_BY_SLOT && Object.prototype.hasOwnProperty.call(NAV_BY_SLOT, Number(slot))) {
-        return NAV_BY_SLOT[Number(slot)] || {};
-      }
-      // fallback for legacy array-indexed payloads
-      return NAV_MAP[Number(slot)] || {};
-    }
-
-    // ✅ Slot-safe lookup: playlist entries keyed by slot
-    var NAV_BY_SLOT = {};
-    for (var i0 = 0; i0 < NAV_MAP.length; i0++) {
-      var e0 = NAV_MAP[i0];
-      if (!e0) continue;
-      var s0 = Number(e0.slot);
-      if (!Number.isNaN(s0)) NAV_BY_SLOT[s0] = e0;
-    }
-
-    function entryForSlot(slot) {
-      return NAV_BY_SLOT[slot] || {};
-    }
-
-    function tiles() {
-      return Array.prototype.slice.call(bottomMenu.querySelectorAll(".tile"));
-    }
-    var TILE_LIST = tiles();
-
-    // activeIndex is a SLOT (tile.dataset.index), not a tile array position
-    var activeIndex = (function () {
-      var activeTile = TILE_LIST.find(function (t) {
-        return t.classList.contains("tile--active");
-      });
-      if (!activeTile) return 0;
-      var idx = Number(activeTile.dataset.index);
-      return Number.isNaN(idx) ? 0 : idx;
-    })();
-
-    var activeNavIndex = 0;
-
-    var showingA = true;
-    var timer = null;
-
-    var mode = "video"; // "video" | "image"
-    var navOpen = false;
-
-    // current nav item media
-    var currentYouTube = null;
-    var currentTitle = "Now Playing";
-
-    // DSP roller timer/state
-    var dspTimer = null;
-    var dspIndex = 0;
-
-    // Modal state
-    var uiModalOpen = false; // events/contact modal open
-    var ytOpen = false; // YouTube modal open
-    var lastFocus = null;
-
-    function syncStageMode() {
-      stage.setAttribute("data-mode", mode);
-      stage.setAttribute("data-active", String(activeIndex));
-    }
-
-    // ===== Utils
-    function clearTimer() {
-      if (timer) clearTimeout(timer);
-      timer = null;
-    }
-    function clearDSP() {
-      if (dspTimer) clearInterval(dspTimer);
-      dspTimer = null;
-      dspIndex = 0;
-    }
-
-    function setTabActive(whichOrNull) {
-      if (tabEventsBtn) tabEventsBtn.classList.toggle("tabbtn--active", whichOrNull === "events");
-      if (tabConnectBtn) tabConnectBtn.classList.toggle("tabbtn--active", whichOrNull === "contact");
-    }
-
-    function primeVideo(videoEl) {
-      videoEl.muted = true;
-      videoEl.playsInline = true;
-      videoEl.setAttribute("muted", "");
-      videoEl.setAttribute("playsinline", "");
-      videoEl.setAttribute("webkit-playsinline", "");
-    }
-
-    function playVideo(videoEl, url) {
-      if (!url) return;
-      primeVideo(videoEl);
-      if (videoEl.src !== url) videoEl.src = url;
-
-      function start() {
-        try {
-          videoEl.currentTime = 0;
-        } catch (_) {}
-        videoEl.play().catch(function () {});
-      }
-
-      if (videoEl.readyState >= 1) start();
-      else {
-        videoEl.addEventListener("loadedmetadata", start, { once: true });
-        videoEl.load();
-      }
-    }
-
-    function showImage(imgEl, url) {
-      if (!url) return;
-      if (imgEl.src !== url) imgEl.src = url;
-    }
-
-    // helper: when you have a SLOT, get its tile element safely
-    function getTileBySlot(slot) {
-      for (var i = 0; i < TILE_LIST.length; i++) {
-        if (Number(TILE_LIST[i].dataset.index) === slot) return TILE_LIST[i];
-      }
-      return TILE_LIST[0] || null;
-    }
-
-    // slot <-> position helpers (because dataset.index is a slot, and TILE_LIST is a position-ordered array)
-    function findTilePosBySlot(slot) {
-      for (var i = 0; i < TILE_LIST.length; i++) {
-        if (Number(TILE_LIST[i].dataset.index) === slot) return i;
-      }
-      return 0;
-    }
-
-    function getSlotAtPos(pos) {
-      var t = TILE_LIST[pos];
-      if (!t) return 0;
-      var slot = Number(t.dataset.index);
-      return Number.isNaN(slot) ? 0 : slot;
-    }
-
-    // ✅ UPDATED: scheduleNext cycles by TILE_LIST position, not by slot number
-    function scheduleNext() {
-      clearTimer();
-
-      if (!TILE_LIST || !TILE_LIST.length) return;
-      if (mode !== "video") return;
-      if (navOpen) return;
-      if (uiModalOpen) return;
-      if (ytOpen) return;
-
-      timer = setTimeout(function () {
-        var pos = findTilePosBySlot(activeIndex);
-        var nextPos = (pos + 1) % TILE_LIST.length;
-        var nextSlot = getSlotAtPos(nextPos);
-
-        goToIndex(nextSlot, { keepNavOpen: false, autoSelectFirst: false });
-      }, CYCLE_MS);
-    }
-
-    function setPlayButtonVisible(visible) {
-      playBtn.classList.toggle("bg-play--show", !!visible);
-    }
-
-    function setDSPVisible(visible) {
-      dspWidget.classList.toggle("dsp--show", !!visible);
-    }
-
-    function crossfadeTo(payload) {
-      if (!payload || !payload.type || !payload.src) return;
-
-      var incomingLayer = showingA ? bgB : bgA;
-      var outgoingLayer = showingA ? bgA : bgB;
-
-      var incomingVid = showingA ? vidB : vidA;
-      var outgoingVid = showingA ? vidA : vidB;
-
-      var incomingImg = showingA ? imgB : imgA;
-
-      incomingLayer.dataset.mode = payload.type;
-
-      if (payload.type === "video") {
-        setPlayButtonVisible(false);
-        setDSPVisible(false);
-        clearDSP();
-        currentYouTube = null;
-
-        playVideo(incomingVid, payload.src);
-      } else {
-        try {
-          incomingVid.pause();
-        } catch (_) {}
-        incomingVid.removeAttribute("src");
-        incomingVid.load();
-        showImage(incomingImg, payload.src);
-      }
-
-      incomingLayer.classList.remove("bg--fade-out");
-      outgoingLayer.classList.remove("bg--fade-in");
-      void incomingLayer.offsetWidth;
-
-      incomingLayer.classList.add("bg--fade-in");
-      outgoingLayer.classList.add("bg--fade-out");
-
-      setTimeout(function () {
-        try {
-          outgoingVid.pause();
-        } catch (_) {}
-        outgoingVid.removeAttribute("src");
-        outgoingVid.load();
-      }, 650);
-
-      showingA = !showingA;
-
-      if (payload.type === "video") {
-        incomingVid.addEventListener(
-          "playing",
-          function () {
-            scheduleNext();
-          },
-          { once: true }
+    <script>
+      (function () {
+        var CYCLE_MS = 6000;
+        document.documentElement.style.setProperty(
+          "--cycleMs",
+          CYCLE_MS + "ms",
         );
-      } else {
-        clearTimer();
-      }
-    }
 
-    function restartProgress(tile) {
-      var prog = tile.querySelector(".tile__progress");
-      if (!prog) return;
-      prog.style.transition = "none";
-      prog.style.transform = "scaleX(0)";
-      void prog.offsetWidth;
-      prog.style.transition = "";
-      requestAnimationFrame(function () {
-        prog.style.transform = "scaleX(1)";
-      });
-    }
+        // ===== DOM
+        var stage = document.getElementById("stage");
 
-    function centerActiveTile(index) {
-      try {
-        TILE_LIST[index].scrollIntoView({
-          behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
-          inline: "center",
-          block: "nearest"
-        });
-      } catch (_) {}
-    }
+        var bgA = document.getElementById("bgA");
+        var bgB = document.getElementById("bgB");
+        var vidA = document.getElementById("vidA");
+        var vidB = document.getElementById("vidB");
+        var imgA = document.getElementById("imgA");
+        var imgB = document.getElementById("imgB");
 
-    function setActiveBottom(targetIndex) {
-      var activeTile = null;
+        var bottomBar = document.getElementById("bottomBar");
+        var bottomMenu = document.getElementById("bottomMenu");
 
-      TILE_LIST.forEach(function (t) {
-        var tIdx = Number(t.dataset.index);
-        var isActive = tIdx === targetIndex;
+        var rightNav = document.getElementById("rightNav");
+        var navScrim = document.getElementById("navScrim");
 
-        t.classList.toggle("tile--active", isActive);
-        t.classList.toggle("tile--inactive", !isActive);
+        var playBtn = document.getElementById("bgPlayBtn");
+        var videoStartBtn = document.getElementById("videoStartBtn");
 
-        if (!isActive) {
-          var p = t.querySelector(".tile__progress");
-          if (p) {
-            p.style.transition = "none";
-            p.style.transform = "scaleX(0)";
-            void p.offsetWidth;
-            p.style.transition = "";
+        var dspWidget = document.getElementById("dspWidget");
+        var dspStack = document.getElementById("dspStack");
+
+        var ytModal = document.getElementById("ytModal");
+        var ytFrame = document.getElementById("ytFrame");
+        var ytBackdrop = document.getElementById("ytBackdrop");
+        var ytCloseBtn = document.getElementById("ytCloseBtn");
+        var ytTitle = document.getElementById("ytTitle");
+
+        // ===== Header tabs
+        var tabEventsBtn = document.getElementById("tabEvents");
+        var tabConnectBtn = document.getElementById("tabConnect");
+
+        // ===== DATA
+        var NAV_MAP = [];
+        try {
+          NAV_MAP = JSON.parse(
+            document.getElementById("playlistData").textContent || "[]",
+          );
+        } catch (e) {
+          NAV_MAP = [];
+        }
+
+        // Build slot -> entry map (because slots may be non-contiguous / not zero-based)
+        var NAV_BY_SLOT = {};
+        for (var _i = 0; _i < NAV_MAP.length; _i++) {
+          var _e = NAV_MAP[_i];
+          if (_e && _e.slot !== undefined && _e.slot !== null) {
+            NAV_BY_SLOT[Number(_e.slot)] = _e;
           }
-        } else {
-          activeTile = t;
         }
-      });
+        function entryForSlot(slot) {
+          if (
+            NAV_BY_SLOT &&
+            Object.prototype.hasOwnProperty.call(NAV_BY_SLOT, Number(slot))
+          ) {
+            return NAV_BY_SLOT[Number(slot)] || {};
+          }
+          // fallback for legacy array-indexed payloads
+          return NAV_MAP[Number(slot)] || {};
+        }
 
-      if (activeTile) {
-        restartProgress(activeTile);
-        try {
-          activeTile.scrollIntoView({
-            behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
-            inline: "center",
-            block: "nearest"
+        // ✅ Slot-safe lookup: playlist entries keyed by slot
+        var NAV_BY_SLOT = {};
+        for (var i0 = 0; i0 < NAV_MAP.length; i0++) {
+          var e0 = NAV_MAP[i0];
+          if (!e0) continue;
+          var s0 = Number(e0.slot);
+          if (!Number.isNaN(s0)) NAV_BY_SLOT[s0] = e0;
+        }
+
+        function entryForSlot(slot) {
+          return NAV_BY_SLOT[slot] || {};
+        }
+
+        function tiles() {
+          return Array.prototype.slice.call(
+            bottomMenu.querySelectorAll(".tile"),
+          );
+        }
+        var TILE_LIST = tiles();
+
+        // activeIndex is a SLOT (tile.dataset.index), not a tile array position
+        var activeIndex = (function () {
+          var activeTile = TILE_LIST.find(function (t) {
+            return t.classList.contains("tile--active");
           });
-        } catch (_) {}
-      }
-    }
+          if (!activeTile) return 0;
+          var idx = Number(activeTile.dataset.index);
+          return Number.isNaN(idx) ? 0 : idx;
+        })();
 
-    function escapeHtml(str) {
-      return String(str).replace(/[&<>"']/g, function (s) {
-        return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" }[s];
-      });
-    }
+        var activeNavIndex = 0;
 
-    // ===== Right nav build (stagger)
-    function buildRightNav() {
-      var entry = entryForSlot(activeIndex) || { nav: [] };
-      var nav = entry.nav || [];
+        var showingA = true;
+        var timer = null;
 
-      var html = '<div class="navscroll"><div class="navlist">';
-      for (var i = 0; i < nav.length; i++) {
-        var n = nav[i] || {};
-        var year = n.year && String(n.year).trim() ? String(n.year) : "";
-        var yearHtml = year ? '<div class="navyear">' + escapeHtml(year) + "</div>" : '<div class="navyear" style="opacity:0">.</div>';
+        var mode = "video"; // "video" | "image"
+        var navOpen = false;
+        var blockedVideo = null;
 
-        var activeClass = i === activeNavIndex ? "navitem--active" : "navitem--inactive";
+        // current nav item media
+        var currentYouTube = null;
+        var currentTitle = "Now Playing";
 
-        html +=
-          '<div class="navblock navblock--anim" style="--i:' +
-          i +
-          '">' +
-          yearHtml +
-          '<div class="navitem ' +
-          activeClass +
-          '" role="button" tabindex="0" data-nav-index="' +
-          i +
-          '">' +
-          '<div class="navitem__icon" aria-hidden="true"></div>' +
-          '<div class="navitem__main">' +
-          '<p class="navitem__title">' +
-          escapeHtml(n.title || "") +
-          "</p>" +
-          '<div class="navitem__kind">' +
-          escapeHtml(n.kind || "") +
-          "</div>" +
-          "</div>" +
-          '<div class="navitem__meta">' +
-          escapeHtml(n.meta || "") +
-          "</div>" +
-          "</div>" +
-          "</div>";
-      }
-      html += "</div></div>";
-      rightNav.innerHTML = html;
+        // DSP roller timer/state
+        var dspTimer = null;
+        var dspIndex = 0;
 
-      var scroller = rightNav.querySelector(".navscroll");
-      if (scroller) scroller.scrollTop = 0;
-    }
+        // Modal state
+        var uiModalOpen = false; // events/contact modal open
+        var ytOpen = false; // YouTube modal open
+        var lastFocus = null;
 
-    function openRightNav() {
-      navOpen = true;
-      buildRightNav();
-      rightNav.classList.add("rightnav--open");
-      navScrim.classList.add("navscrim--on");
-      clearTimer();
-    }
-
-    function closeRightNav(opts) {
-      opts = opts || {};
-      var returnToVideoIfImage = opts.returnToVideoIfImage !== false;
-      if (!navOpen) return;
-
-      navOpen = false;
-      rightNav.classList.remove("rightnav--open");
-      navScrim.classList.remove("navscrim--on");
-
-      if (returnToVideoIfImage && mode === "image") {
-        returnToVideo();
-        return;
-      }
-      scheduleNext();
-    }
-
-    // ===== DSP roller
-    function buildDSP(dsps) {
-      clearDSP();
-      dspStack.innerHTML = "";
-
-      if (!dsps || !dsps.length) {
-        setDSPVisible(false);
-        return;
-      }
-
-      dsps.forEach(function (d, i) {
-        var a = document.createElement("a");
-        a.className = "dsp__item" + (i === 0 ? " dsp__item--active" : "");
-        a.href = d.url || "#";
-        a.target = "_blank";
-        a.rel = "noopener";
-        a.textContent = d.name || "";
-        a.style.pointerEvents = i === 0 ? "auto" : "none";
-        dspStack.appendChild(a);
-      });
-
-      setDSPVisible(true);
-      dspIndex = 0;
-      applyDSPTransform();
-
-      if (dsps.length > 1) {
-        var everyMs = parseInt(getComputedStyle(document.documentElement).getPropertyValue("--dspEveryMs")) || 2600;
-        dspTimer = setInterval(function () {
-          dspIndex = (dspIndex + 1) % dsps.length;
-          setDSPActive(dspIndex);
-          applyDSPTransform();
-        }, everyMs);
-      }
-    }
-
-    function setDSPActive(idx) {
-      var items = dspStack.querySelectorAll(".dsp__item");
-      items.forEach(function (el, i) {
-        var active = i === idx;
-        el.classList.toggle("dsp__item--active", active);
-        el.style.pointerEvents = active ? "auto" : "none";
-      });
-    }
-
-    function applyDSPTransform() {
-      var h = dspWidget.getBoundingClientRect().height || 44;
-      dspStack.style.transform = "translateY(" + -dspIndex * h + "px)";
-    }
-
-    // ===== YouTube modal
-    function getYouTubeId(url) {
-      if (!url) return "";
-      var u = String(url).trim();
-
-      var m = u.match(/youtu\.be\/([a-zA-Z0-9_-]{6,})/);
-      if (m && m[1]) return m[1];
-
-      m = u.match(/[?&]v=([a-zA-Z0-9_-]{6,})/);
-      if (m && m[1]) return m[1];
-
-      m = u.match(/\/embed\/([a-zA-Z0-9_-]{6,})/);
-      if (m && m[1]) return m[1];
-
-      m = u.match(/\/([a-zA-Z0-9_-]{6,})$/);
-      return m && m[1] ? m[1] : "";
-    }
-
-    function openYouTubeModal(youtubeUrl, title) {
-      var id = getYouTubeId(youtubeUrl);
-      if (!id) return;
-
-      // close any glass modal so they never stack
-      closeGlass("events", { silent: true });
-      closeGlass("contact", { silent: true });
-
-      ytOpen = true;
-      clearTimer();
-
-      ytTitle.textContent = title || "Now Playing";
-      ytModal.classList.add("ytmodal--open");
-      ytModal.setAttribute("aria-hidden", "false");
-
-      ytFrame.src =
-        "https://www.youtube.com/embed/" +
-        encodeURIComponent(id) +
-        "?autoplay=1&rel=0&playsinline=1";
-
-      document.body.style.overflow = "hidden";
-    }
-
-    function closeYouTubeModal() {
-      ytModal.classList.remove("ytmodal--open");
-      ytModal.setAttribute("aria-hidden", "true");
-      ytFrame.src = "";
-      ytOpen = false;
-      // ✅ restore scrolling
-      document.body.style.overflow = "";
-      scheduleNext();
-    }
-
-    // ===== Nav selection -> image bg + play + DSP
-    function setBackgroundToNavItem(navIndex) {
-      var entry = entryForSlot(activeIndex) || { nav: [] };
-      var nav = entry.nav || [];
-      var navItem = nav[navIndex];
-      if (!navItem) return;
-
-      mode = "image";
-      activeNavIndex = navIndex;
-      syncStageMode();
-
-      var rows = rightNav.querySelectorAll(".navitem");
-      rows.forEach(function (row, i) {
-        row.classList.toggle("navitem--active", i === navIndex);
-        row.classList.toggle("navitem--inactive", i !== navIndex);
-      });
-
-      buildDSP(navItem.dsps || []);
-
-      currentYouTube = navItem.youtube || "";
-      currentTitle = navItem.title || "Now Playing";
-      setPlayButtonVisible(!!currentYouTube);
-
-      crossfadeTo({ type: "image", src: navItem.img });
-    }
-
-    function autoSelectFirstNavItem() {
-      var entry = entryForSlot(activeIndex) || { nav: [] };
-      var nav = entry.nav || [];
-      if (!nav.length) {
-        mode = "video";
-        syncStageMode();
-        setPlayButtonVisible(false);
-        setDSPVisible(false);
-        clearDSP();
-
-        var tile = getTileBySlot(activeIndex);
-        var v = (tile && tile.dataset.video) || entry.video;
-
-        crossfadeTo({ type: "video", src: v });
-        return;
-      }
-      setBackgroundToNavItem(0);
-    }
-
-    function returnToVideo() {
-      mode = "video";
-      syncStageMode();
-      setPlayButtonVisible(false);
-      setDSPVisible(false);
-      clearDSP();
-      currentYouTube = null;
-
-      var entry = entryForSlot(activeIndex) || {};
-      var tile = getTileBySlot(activeIndex);
-      var v = (tile && tile.dataset.video) || entry.video;
-
-      crossfadeTo({ type: "video", src: v });
-    }
-
-    // ===== Main switch bottom item
-    function goToIndex(index, options) {
-      options = options || {};
-      var keepNavOpen = options.keepNavOpen === true;
-      var autoSelectFirst = options.autoSelectFirst !== false;
-
-      activeIndex = index;
-      activeNavIndex = 0;
-      syncStageMode();
-
-      setActiveBottom(activeIndex);
-
-      if (keepNavOpen) {
-        openRightNav();
-        if (autoSelectFirst) autoSelectFirstNavItem();
-      } else {
-        navOpen = false;
-        rightNav.classList.remove("rightnav--open");
-        navScrim.classList.remove("navscrim--on");
-
-        mode = "video";
-        syncStageMode();
-        setPlayButtonVisible(false);
-        setDSPVisible(false);
-        clearDSP();
-        currentYouTube = null;
-
-        var entry = entryForSlot(activeIndex) || {};
-        var tile = getTileBySlot(activeIndex);
-        var videoUrl = (tile && tile.dataset.video) || entry.video;
-
-        crossfadeTo({ type: "video", src: videoUrl });
-      }
-    }
-
-    // ===== Events / Contact popups
-    var EVENTS = [];
-    try {
-      EVENTS = JSON.parse(document.getElementById("eventsData").textContent || "[]");
-    } catch (e) {
-      EVENTS = [];
-    }
-
-    function renderEvents() {
-      var list = document.getElementById("eventsList");
-      if (!list) return;
-
-      var wrap = document.createElement("div");
-      wrap.className = "events";
-
-      if (!EVENTS.length) {
-        var empty = document.createElement("div");
-        empty.className = "events__empty";
-        empty.textContent = "No events are published right now.";
-        wrap.appendChild(empty);
-        list.innerHTML = "";
-        list.appendChild(wrap);
-        return;
-      }
-
-      EVENTS.forEach(function (ev) {
-        var row = document.createElement("div");
-        row.className = "eventrow";
-
-        var main = document.createElement("div");
-        main.className = "eventrow__main";
-
-        var t = document.createElement("p");
-        t.className = "eventrow__title";
-        t.textContent = ev.title;
-
-        var meta = document.createElement("div");
-        meta.className = "eventrow__meta";
-        meta.textContent = (ev.date || "") + (ev.location ? " • " + ev.location : "");
-
-        main.appendChild(t);
-        main.appendChild(meta);
-
-        var btn = document.createElement("a");
-        btn.className = "whitebtn";
-        btn.href = ev.link || "#";
-        btn.target = "_blank";
-        btn.rel = "noopener noreferrer";
-        btn.textContent = ev.cta_label || "Get Access";
-
-        if (!ev.link) {
-          btn.href = "javascript:void(0)";
-          btn.style.opacity = "0.6";
-          btn.style.pointerEvents = "none";
+        function syncStageMode() {
+          stage.setAttribute("data-mode", mode);
+          stage.setAttribute("data-active", String(activeIndex));
         }
 
-        row.appendChild(main);
-        row.appendChild(btn);
-        wrap.appendChild(row);
-      });
+        // ===== Utils
+        function clearTimer() {
+          if (timer) clearTimeout(timer);
+          timer = null;
+        }
+        function clearDSP() {
+          if (dspTimer) clearInterval(dspTimer);
+          dspTimer = null;
+          dspIndex = 0;
+        }
 
-      list.innerHTML = "";
-      list.appendChild(wrap);
-    }
+        function setTabActive(whichOrNull) {
+          if (tabEventsBtn)
+            tabEventsBtn.classList.toggle(
+              "tabbtn--active",
+              whichOrNull === "events",
+            );
+          if (tabConnectBtn)
+            tabConnectBtn.classList.toggle(
+              "tabbtn--active",
+              whichOrNull === "contact",
+            );
+        }
 
-    // ✅ FIX: never allow Events + Contact to stack (always closes the other first)
-    function openGlass(which) {
-      // close the other glass modal if open
-      if (which === "events") closeGlass("contact", { silent: true });
-      if (which === "contact") closeGlass("events", { silent: true });
+        function primeVideo(videoEl) {
+          videoEl.defaultMuted = true;
+          videoEl.muted = true;
+          videoEl.playsInline = true;
+          videoEl.autoplay = true;
+          videoEl.loop = true;
+          videoEl.setAttribute("muted", "");
+          videoEl.setAttribute("autoplay", "");
+          videoEl.setAttribute("loop", "");
+          videoEl.setAttribute("playsinline", "");
+          videoEl.setAttribute("webkit-playsinline", "");
+        }
 
-      // close right nav so UI is clean
-      if (navOpen) closeRightNav({ returnToVideoIfImage: false });
+        function setVideoStartVisible(visible, videoEl) {
+          blockedVideo = visible ? videoEl : null;
+          videoStartBtn.classList.toggle("video-start--show", !!visible);
+        }
 
-      uiModalOpen = true;
-      clearTimer();
-      setTabActive(which);
+        function attemptVideoPlayback(videoEl, resetToStart) {
+          if (!videoEl) return;
 
-      var el = document.getElementById(which === "events" ? "eventsModal" : "contactModal");
-      if (!el) return;
+          primeVideo(videoEl);
+          if (resetToStart) {
+            try {
+              videoEl.currentTime = 0;
+            } catch (_) {}
+          }
 
-      lastFocus = document.activeElement;
+          var playAttempt;
+          try {
+            playAttempt = videoEl.play();
+          } catch (_) {
+            setVideoStartVisible(true, videoEl);
+            return;
+          }
 
-      el.classList.add("glassmodal--open");
-      el.setAttribute("aria-hidden", "false");
+          if (playAttempt && typeof playAttempt.then === "function") {
+            playAttempt
+              .then(function () {
+                if (blockedVideo === videoEl) setVideoStartVisible(false);
+              })
+              .catch(function () {
+                if (mode === "video") setVideoStartVisible(true, videoEl);
+              });
+          } else {
+            setVideoStartVisible(false);
+          }
+        }
 
-      var closeBtn = el.querySelector(".glassmodal__close");
-      if (closeBtn) closeBtn.focus();
+        function playVideo(videoEl, url) {
+          if (!url) return;
+          primeVideo(videoEl);
+          if (videoEl.getAttribute("src") !== url) videoEl.src = url;
 
-      if (which === "events") renderEvents();
-      if (which === "contact") {
-        var email = document.querySelector("#contactForm input[name='email']");
-        if (email) email.focus();
-      }
-    }
+          function start() {
+            attemptVideoPlayback(videoEl, true);
+          }
 
-    // ✅ FIX: uiModalOpen reflects whether ANY glass modal is open
-    function closeGlass(which, opts) {
-      opts = opts || {};
-      var el = document.getElementById(which === "events" ? "eventsModal" : "contactModal");
-      if (!el) return;
+          if (videoEl.readyState >= 1) start();
+          else {
+            videoEl.addEventListener("loadedmetadata", start, { once: true });
+            videoEl.load();
+          }
+        }
 
-      el.classList.remove("glassmodal--open");
-      el.setAttribute("aria-hidden", "true");
+        function showImage(imgEl, url) {
+          if (!url) return;
+          if (imgEl.src !== url) imgEl.src = url;
+        }
 
-      var eOpen =
-        document.getElementById("eventsModal") && document.getElementById("eventsModal").classList.contains("glassmodal--open");
-      var cOpen =
-        document.getElementById("contactModal") && document.getElementById("contactModal").classList.contains("glassmodal--open");
+        // helper: when you have a SLOT, get its tile element safely
+        function getTileBySlot(slot) {
+          for (var i = 0; i < TILE_LIST.length; i++) {
+            if (Number(TILE_LIST[i].dataset.index) === slot)
+              return TILE_LIST[i];
+          }
+          return TILE_LIST[0] || null;
+        }
 
-      uiModalOpen = !!(eOpen || cOpen);
+        // slot <-> position helpers (because dataset.index is a slot, and TILE_LIST is a position-ordered array)
+        function findTilePosBySlot(slot) {
+          for (var i = 0; i < TILE_LIST.length; i++) {
+            if (Number(TILE_LIST[i].dataset.index) === slot) return i;
+          }
+          return 0;
+        }
 
-      if (!uiModalOpen) {
-        setTabActive(null);
-        if (!opts.silent && lastFocus && lastFocus.focus) lastFocus.focus();
-        scheduleNext();
-      }
-    }
+        function getSlotAtPos(pos) {
+          var t = TILE_LIST[pos];
+          if (!t) return 0;
+          var slot = Number(t.dataset.index);
+          return Number.isNaN(slot) ? 0 : slot;
+        }
 
-    function wireModalClosers(modalId, which) {
-      var el = document.getElementById(modalId);
-      if (!el) return;
+        // ✅ UPDATED: scheduleNext cycles by TILE_LIST position, not by slot number
+        function scheduleNext() {
+          clearTimer();
 
-      var closeBtn = el.querySelector(".glassmodal__close");
-      if (closeBtn)
-        closeBtn.addEventListener("click", function () {
-          closeGlass(which);
-        });
+          if (!TILE_LIST || !TILE_LIST.length) return;
+          if (mode !== "video") return;
+          if (navOpen) return;
+          if (uiModalOpen) return;
+          if (ytOpen) return;
 
-      el.addEventListener("click", function (e) {
-        if (e.target.classList && e.target.classList.contains("glassmodal__backdrop")) closeGlass(which);
-      });
-    }
-    wireModalClosers("eventsModal", "events");
-    wireModalClosers("contactModal", "contact");
+          timer = setTimeout(function () {
+            var pos = findTilePosBySlot(activeIndex);
+            var nextPos = (pos + 1) % TILE_LIST.length;
+            var nextSlot = getSlotAtPos(nextPos);
 
-    // contact submit (demo)
-    document.addEventListener("submit", function (e) {
-      if (!e.target || e.target.id !== "contactForm") return;
-      e.preventDefault();
+            goToIndex(nextSlot, { keepNavOpen: false, autoSelectFirst: false });
+          }, CYCLE_MS);
+        }
 
-      var status = document.getElementById("contactStatus");
-      if (status) status.textContent = "Sending…";
+        function setPlayButtonVisible(visible) {
+          playBtn.classList.toggle("bg-play--show", !!visible);
+        }
 
-      setTimeout(function () {
-        if (status) status.textContent = "Sent!";
-        try {
-          e.target.reset();
-        } catch (_) {}
-      }, 600);
-    });
+        function setDSPVisible(visible) {
+          dspWidget.classList.toggle("dsp--show", !!visible);
+        }
 
-    // Header handlers
-    if (tabEventsBtn)
-      tabEventsBtn.addEventListener("click", function () {
-        openGlass("events");
-      });
-    if (tabConnectBtn)
-      tabConnectBtn.addEventListener("click", function () {
-        openGlass("contact");
-      });
+        function crossfadeTo(payload) {
+          if (!payload || !payload.type || !payload.src) return;
 
-    // ===== Bottom click: open right nav + auto-select first nav item
-    bottomBar.addEventListener("click", function (e) {
-      if (uiModalOpen || ytOpen) return;
+          var incomingLayer = showingA ? bgB : bgA;
+          var outgoingLayer = showingA ? bgA : bgB;
 
-      var tile = e.target.closest(".tile");
-      if (!tile || !bottomBar.contains(tile)) return;
+          var incomingVid = showingA ? vidB : vidA;
+          var outgoingVid = showingA ? vidA : vidB;
 
-      var idx = Number(tile.dataset.index);
-      if (Number.isNaN(idx)) return;
+          var incomingImg = showingA ? imgB : imgA;
 
-      goToIndex(idx, { keepNavOpen: true, autoSelectFirst: true });
-    });
+          incomingLayer.dataset.mode = payload.type;
 
-    bottomBar.addEventListener("keydown", function (e) {
-      if (uiModalOpen || ytOpen) return;
+          if (payload.type === "video") {
+            setPlayButtonVisible(false);
+            setVideoStartVisible(false);
+            setDSPVisible(false);
+            clearDSP();
+            currentYouTube = null;
 
-      if (e.key !== "Enter" && e.key !== " ") return;
-      var tile = e.target.closest(".tile");
-      if (!tile) return;
-      e.preventDefault();
+            playVideo(incomingVid, payload.src);
+          } else {
+            setVideoStartVisible(false);
+            try {
+              incomingVid.pause();
+            } catch (_) {}
+            incomingVid.removeAttribute("src");
+            incomingVid.load();
+            showImage(incomingImg, payload.src);
+          }
 
-      var idx = Number(tile.dataset.index);
-      if (Number.isNaN(idx)) return;
+          incomingLayer.classList.remove("bg--fade-out");
+          outgoingLayer.classList.remove("bg--fade-in");
+          void incomingLayer.offsetWidth;
 
-      goToIndex(idx, { keepNavOpen: true, autoSelectFirst: true });
-    });
+          incomingLayer.classList.add("bg--fade-in");
+          outgoingLayer.classList.add("bg--fade-out");
 
-    // Right nav click selects nav item
-    rightNav.addEventListener("click", function (e) {
-      if (uiModalOpen || ytOpen) return;
+          setTimeout(function () {
+            try {
+              outgoingVid.pause();
+            } catch (_) {}
+            outgoingVid.removeAttribute("src");
+            outgoingVid.load();
+          }, 650);
 
-      var row = e.target.closest(".navitem");
-      if (!row || !rightNav.contains(row)) return;
-      var idx = Number(row.dataset.navIndex);
-      if (Number.isNaN(idx)) return;
-      setBackgroundToNavItem(idx);
-    });
+          showingA = !showingA;
 
-    rightNav.addEventListener("keydown", function (e) {
-      if (uiModalOpen || ytOpen) return;
+          if (payload.type === "video") {
+            incomingVid.addEventListener(
+              "playing",
+              function () {
+                scheduleNext();
+              },
+              { once: true },
+            );
+          } else {
+            clearTimer();
+          }
+        }
 
-      if (e.key !== "Enter" && e.key !== " ") return;
-      var row = e.target.closest(".navitem");
-      if (!row) return;
-      e.preventDefault();
-      var idx = Number(row.dataset.navIndex);
-      if (Number.isNaN(idx)) return;
-      setBackgroundToNavItem(idx);
-    });
+        function restartProgress(tile) {
+          var prog = tile.querySelector(".tile__progress");
+          if (!prog) return;
+          prog.style.transition = "none";
+          prog.style.transform = "scaleX(0)";
+          void prog.offsetWidth;
+          prog.style.transition = "";
+          requestAnimationFrame(function () {
+            prog.style.transform = "scaleX(1)";
+          });
+        }
 
-    // Scrim closes right nav (returns to video)
-    navScrim.addEventListener("click", function () {
-      if (uiModalOpen || ytOpen) return;
-      closeRightNav({ returnToVideoIfImage: true });
-    });
+        function centerActiveTile(index) {
+          try {
+            TILE_LIST[index].scrollIntoView({
+              behavior: window.matchMedia("(prefers-reduced-motion: reduce)")
+                .matches
+                ? "auto"
+                : "smooth",
+              inline: "center",
+              block: "nearest",
+            });
+          } catch (_) {}
+        }
 
-    // Play button opens YouTube modal for CURRENT nav item
-    playBtn.addEventListener("click", function () {
-      if (!currentYouTube) return;
-      openYouTubeModal(currentYouTube, currentTitle);
-    });
+        function setActiveBottom(targetIndex) {
+          var activeTile = null;
 
-    // YouTube modal close
-    ytCloseBtn.addEventListener("click", closeYouTubeModal);
-    ytBackdrop.addEventListener("click", closeYouTubeModal);
+          TILE_LIST.forEach(function (t) {
+            var tIdx = Number(t.dataset.index);
+            var isActive = tIdx === targetIndex;
 
-    // Escape key closes: YouTube -> Events -> Contact -> RightNav
-    document.addEventListener("keydown", function (e) {
-      if (e.key !== "Escape") return;
+            t.classList.toggle("tile--active", isActive);
+            t.classList.toggle("tile--inactive", !isActive);
 
-      if (ytModal.classList.contains("ytmodal--open")) {
-        closeYouTubeModal();
-        return;
-      }
+            if (!isActive) {
+              var p = t.querySelector(".tile__progress");
+              if (p) {
+                p.style.transition = "none";
+                p.style.transform = "scaleX(0)";
+                void p.offsetWidth;
+                p.style.transition = "";
+              }
+            } else {
+              activeTile = t;
+            }
+          });
 
-      var eM = document.getElementById("eventsModal");
-      if (eM && eM.classList.contains("glassmodal--open")) {
-        closeGlass("events");
-        return;
-      }
+          if (activeTile) {
+            restartProgress(activeTile);
+            try {
+              activeTile.scrollIntoView({
+                behavior: window.matchMedia("(prefers-reduced-motion: reduce)")
+                  .matches
+                  ? "auto"
+                  : "smooth",
+                inline: "center",
+                block: "nearest",
+              });
+            } catch (_) {}
+          }
+        }
 
-      var cM = document.getElementById("contactModal");
-      if (cM && cM.classList.contains("glassmodal--open")) {
-        closeGlass("contact");
-        return;
-      }
+        function escapeHtml(str) {
+          return String(str).replace(/[&<>"']/g, function (s) {
+            return {
+              "&": "&amp;",
+              "<": "&lt;",
+              ">": "&gt;",
+              '"': "&quot;",
+              "'": "&#039;",
+            }[s];
+          });
+        }
 
-      if (navOpen) closeRightNav({ returnToVideoIfImage: true });
-    });
+        // ===== Right nav build (stagger)
+        function buildRightNav() {
+          var entry = entryForSlot(activeIndex) || { nav: [] };
+          var nav = entry.nav || [];
 
-    // Keep DSP roller aligned on resize
-    window.addEventListener("resize", function () {
-      if (dspWidget.classList.contains("dsp--show")) applyDSPTransform();
-    });
+          var html = '<div class="navscroll"><div class="navlist">';
+          for (var i = 0; i < nav.length; i++) {
+            var n = nav[i] || {};
+            var year = n.year && String(n.year).trim() ? String(n.year) : "";
+            var yearHtml = year
+              ? '<div class="navyear">' + escapeHtml(year) + "</div>"
+              : '<div class="navyear" style="opacity:0">.</div>';
 
-    // Visibility behavior
-    document.addEventListener("visibilitychange", function () {
-      if (document.hidden) {
-        clearTimer();
-        clearDSP();
-      } else {
-        if (uiModalOpen || ytOpen) return;
+            var activeClass =
+              i === activeNavIndex ? "navitem--active" : "navitem--inactive";
 
-        if (!navOpen) {
+            html +=
+              '<div class="navblock navblock--anim" style="--i:' +
+              i +
+              '">' +
+              yearHtml +
+              '<div class="navitem ' +
+              activeClass +
+              '" role="button" tabindex="0" data-nav-index="' +
+              i +
+              '">' +
+              '<div class="navitem__icon" aria-hidden="true"></div>' +
+              '<div class="navitem__main">' +
+              '<p class="navitem__title">' +
+              escapeHtml(n.title || "") +
+              "</p>" +
+              '<div class="navitem__kind">' +
+              escapeHtml(n.kind || "") +
+              "</div>" +
+              "</div>" +
+              '<div class="navitem__meta">' +
+              escapeHtml(n.meta || "") +
+              "</div>" +
+              "</div>" +
+              "</div>";
+          }
+          html += "</div></div>";
+          rightNav.innerHTML = html;
+
+          var scroller = rightNav.querySelector(".navscroll");
+          if (scroller) scroller.scrollTop = 0;
+        }
+
+        function openRightNav() {
+          navOpen = true;
+          buildRightNav();
+          rightNav.classList.add("rightnav--open");
+          navScrim.classList.add("navscrim--on");
+          clearTimer();
+        }
+
+        function closeRightNav(opts) {
+          opts = opts || {};
+          var returnToVideoIfImage = opts.returnToVideoIfImage !== false;
+          if (!navOpen) return;
+
+          navOpen = false;
+          rightNav.classList.remove("rightnav--open");
+          navScrim.classList.remove("navscrim--on");
+
+          if (returnToVideoIfImage && mode === "image") {
+            returnToVideo();
+            return;
+          }
+          scheduleNext();
+        }
+
+        // ===== DSP roller
+        function buildDSP(dsps) {
+          clearDSP();
+          dspStack.innerHTML = "";
+
+          if (!dsps || !dsps.length) {
+            setDSPVisible(false);
+            return;
+          }
+
+          dsps.forEach(function (d, i) {
+            var a = document.createElement("a");
+            a.className = "dsp__item" + (i === 0 ? " dsp__item--active" : "");
+            a.href = d.url || "#";
+            a.target = "_blank";
+            a.rel = "noopener";
+            a.textContent = d.name || "";
+            a.style.pointerEvents = i === 0 ? "auto" : "none";
+            dspStack.appendChild(a);
+          });
+
+          setDSPVisible(true);
+          dspIndex = 0;
+          applyDSPTransform();
+
+          if (dsps.length > 1) {
+            var everyMs =
+              parseInt(
+                getComputedStyle(document.documentElement).getPropertyValue(
+                  "--dspEveryMs",
+                ),
+              ) || 2600;
+            dspTimer = setInterval(function () {
+              dspIndex = (dspIndex + 1) % dsps.length;
+              setDSPActive(dspIndex);
+              applyDSPTransform();
+            }, everyMs);
+          }
+        }
+
+        function setDSPActive(idx) {
+          var items = dspStack.querySelectorAll(".dsp__item");
+          items.forEach(function (el, i) {
+            var active = i === idx;
+            el.classList.toggle("dsp__item--active", active);
+            el.style.pointerEvents = active ? "auto" : "none";
+          });
+        }
+
+        function applyDSPTransform() {
+          var h = dspWidget.getBoundingClientRect().height || 44;
+          dspStack.style.transform = "translateY(" + -dspIndex * h + "px)";
+        }
+
+        // ===== YouTube modal
+        function getYouTubeId(url) {
+          if (!url) return "";
+          var u = String(url).trim();
+
+          var m = u.match(/youtu\.be\/([a-zA-Z0-9_-]{6,})/);
+          if (m && m[1]) return m[1];
+
+          m = u.match(/[?&]v=([a-zA-Z0-9_-]{6,})/);
+          if (m && m[1]) return m[1];
+
+          m = u.match(/\/embed\/([a-zA-Z0-9_-]{6,})/);
+          if (m && m[1]) return m[1];
+
+          m = u.match(/\/([a-zA-Z0-9_-]{6,})$/);
+          return m && m[1] ? m[1] : "";
+        }
+
+        function openYouTubeModal(youtubeUrl, title) {
+          var id = getYouTubeId(youtubeUrl);
+          if (!id) return;
+
+          // close any glass modal so they never stack
+          closeGlass("events", { silent: true });
+          closeGlass("contact", { silent: true });
+
+          ytOpen = true;
+          clearTimer();
+
+          ytTitle.textContent = title || "Now Playing";
+          ytModal.classList.add("ytmodal--open");
+          ytModal.setAttribute("aria-hidden", "false");
+
+          ytFrame.src =
+            "https://www.youtube.com/embed/" +
+            encodeURIComponent(id) +
+            "?autoplay=1&rel=0&playsinline=1";
+
+          document.body.style.overflow = "hidden";
+        }
+
+        function closeYouTubeModal() {
+          ytModal.classList.remove("ytmodal--open");
+          ytModal.setAttribute("aria-hidden", "true");
+          ytFrame.src = "";
+          ytOpen = false;
+          // ✅ restore scrolling
+          document.body.style.overflow = "";
+          scheduleNext();
+        }
+
+        // ===== Nav selection -> image bg + play + DSP
+        function setBackgroundToNavItem(navIndex) {
+          var entry = entryForSlot(activeIndex) || { nav: [] };
+          var nav = entry.nav || [];
+          var navItem = nav[navIndex];
+          if (!navItem) return;
+
+          mode = "image";
+          activeNavIndex = navIndex;
+          syncStageMode();
+
+          var rows = rightNav.querySelectorAll(".navitem");
+          rows.forEach(function (row, i) {
+            row.classList.toggle("navitem--active", i === navIndex);
+            row.classList.toggle("navitem--inactive", i !== navIndex);
+          });
+
+          buildDSP(navItem.dsps || []);
+
+          currentYouTube = navItem.youtube || "";
+          currentTitle = navItem.title || "Now Playing";
+          setPlayButtonVisible(!!currentYouTube);
+
+          crossfadeTo({ type: "image", src: navItem.img });
+        }
+
+        function autoSelectFirstNavItem() {
+          var entry = entryForSlot(activeIndex) || { nav: [] };
+          var nav = entry.nav || [];
+          if (!nav.length) {
+            mode = "video";
+            syncStageMode();
+            setPlayButtonVisible(false);
+            setDSPVisible(false);
+            clearDSP();
+
+            var tile = getTileBySlot(activeIndex);
+            var v = (tile && tile.dataset.video) || entry.video;
+
+            crossfadeTo({ type: "video", src: v });
+            return;
+          }
+          setBackgroundToNavItem(0);
+        }
+
+        function returnToVideo() {
           mode = "video";
           syncStageMode();
           setPlayButtonVisible(false);
           setDSPVisible(false);
           clearDSP();
+          currentYouTube = null;
 
           var entry = entryForSlot(activeIndex) || {};
           var tile = getTileBySlot(activeIndex);
@@ -2005,135 +2085,488 @@
 
           crossfadeTo({ type: "video", src: v });
         }
-      }
-    });
 
-    // ===== Init
-    TILE_LIST.forEach(function (t, i) {
-      if (!t.dataset.index) t.dataset.index = String(i);
-    });
+        // ===== Main switch bottom item
+        function goToIndex(index, options) {
+          options = options || {};
+          var keepNavOpen = options.keepNavOpen === true;
+          var autoSelectFirst = options.autoSelectFirst !== false;
 
-    syncStageMode();
+          activeIndex = index;
+          activeNavIndex = 0;
+          syncStageMode();
 
-    bgA.dataset.mode = "video";
+          setActiveBottom(activeIndex);
 
-    // Show the first slider content immediately on load instead of waiting
-    // for a manual click on the first tile.
-    autoSelectFirstNavItem();
+          if (keepNavOpen) {
+            openRightNav();
+            if (autoSelectFirst) autoSelectFirstNavItem();
+          } else {
+            navOpen = false;
+            rightNav.classList.remove("rightnav--open");
+            navScrim.classList.remove("navscrim--on");
 
-    // restart progress on the *active tile* (slot-based)
-    restartProgress(getTileBySlot(activeIndex) || TILE_LIST[0]);
+            mode = "video";
+            syncStageMode();
+            setPlayButtonVisible(false);
+            setDSPVisible(false);
+            clearDSP();
+            currentYouTube = null;
 
-    setTabActive(null);
+            var entry = entryForSlot(activeIndex) || {};
+            var tile = getTileBySlot(activeIndex);
+            var videoUrl = (tile && tile.dataset.video) || entry.video;
 
-    // center the first active tile on mobile
-    try {
-      (getTileBySlot(activeIndex) || TILE_LIST[0]).scrollIntoView({ inline: "center", block: "nearest" });
-    } catch (_) {}
+            crossfadeTo({ type: "video", src: videoUrl });
+          }
+        }
 
-    vidA.addEventListener(
-      "playing",
-      function () {
-        scheduleNext();
-      },
-      { once: true }
-    );
-  })();
-</script>
+        // ===== Events / Contact popups
+        var EVENTS = [];
+        try {
+          EVENTS = JSON.parse(
+            document.getElementById("eventsData").textContent || "[]",
+          );
+        } catch (e) {
+          EVENTS = [];
+        }
 
+        function renderEvents() {
+          var list = document.getElementById("eventsList");
+          if (!list) return;
 
+          var wrap = document.createElement("div");
+          wrap.className = "events";
 
+          if (!EVENTS.length) {
+            var empty = document.createElement("div");
+            empty.className = "events__empty";
+            empty.textContent = "No events are published right now.";
+            wrap.appendChild(empty);
+            list.innerHTML = "";
+            list.appendChild(wrap);
+            return;
+          }
 
-<script>
-  (function () {
-    /* ===== CONFIG ===== */
-    const TARGET_INDEX = "0"; // Revival
-    const TARGET_DATE = new Date("2026-03-05T00:00:00Z");
+          EVENTS.forEach(function (ev) {
+            var row = document.createElement("div");
+            row.className = "eventrow";
 
-    /* ===== DOM ===== */
-    const stage = document.getElementById("stage");
-    const countdown = document.getElementById("revivalCountdown");
-    const timeEl = document.getElementById("countdownTime");
-    const bottomBar = document.getElementById("bottomBar");
+            var main = document.createElement("div");
+            main.className = "eventrow__main";
 
-    if (!stage || !countdown || !timeEl) return;
+            var t = document.createElement("p");
+            t.className = "eventrow__title";
+            t.textContent = ev.title;
 
-    let timer = null;
-    let dismissed = false;
+            var meta = document.createElement("div");
+            meta.className = "eventrow__meta";
+            meta.textContent =
+              (ev.date || "") + (ev.location ? " • " + ev.location : "");
 
-    /* ===== Countdown math ===== */
-    function getCountdown() {
-      const diff = TARGET_DATE - new Date();
-      if (diff <= 0) return null;
+            main.appendChild(t);
+            main.appendChild(meta);
 
-      const d = Math.floor(diff / 86400000);
-      const h = Math.floor(diff / 3600000) % 24;
-      const m = Math.floor(diff / 60000) % 60;
-      const s = Math.floor(diff / 1000) % 60;
+            var btn = document.createElement("a");
+            btn.className = "whitebtn";
+            btn.href = ev.link || "#";
+            btn.target = "_blank";
+            btn.rel = "noopener noreferrer";
+            btn.textContent = ev.cta_label || "Get Access";
 
-      return `${d}d ${h}h ${m}m ${s}s`;
-    }
+            if (!ev.link) {
+              btn.href = "javascript:void(0)";
+              btn.style.opacity = "0.6";
+              btn.style.pointerEvents = "none";
+            }
 
-    /* ===== Visibility ===== */
-    function show() {
-      if (dismissed) return;
+            row.appendChild(main);
+            row.appendChild(btn);
+            wrap.appendChild(row);
+          });
 
-      const value = getCountdown();
-      if (!value) return hide();
+          list.innerHTML = "";
+          list.appendChild(wrap);
+        }
 
-      timeEl.textContent = value;
-      countdown.classList.add("countdown--show");
-      countdown.setAttribute("aria-hidden", "false");
+        // ✅ FIX: never allow Events + Contact to stack (always closes the other first)
+        function openGlass(which) {
+          // close the other glass modal if open
+          if (which === "events") closeGlass("contact", { silent: true });
+          if (which === "contact") closeGlass("events", { silent: true });
 
-      clearInterval(timer);
-      timer = setInterval(() => {
-        const v = getCountdown();
-        if (!v) hide();
-        else timeEl.textContent = v;
-      }, 1000);
-    }
+          // close right nav so UI is clean
+          if (navOpen) closeRightNav({ returnToVideoIfImage: false });
 
-    function hide() {
-      clearInterval(timer);
-      timer = null;
-      countdown.classList.remove("countdown--show");
-      countdown.setAttribute("aria-hidden", "true");
-    }
+          uiModalOpen = true;
+          clearTimer();
+          setTabActive(which);
 
-    /* ===== React to app state ===== */
-    function syncVisibility() {
-      const active = stage.getAttribute("data-active");
-      const mode = stage.getAttribute("data-mode");
+          var el = document.getElementById(
+            which === "events" ? "eventsModal" : "contactModal",
+          );
+          if (!el) return;
 
-      if (active === TARGET_INDEX && mode === "video") {
-        dismissed = false;
-        show();
-      } else {
-        hide();
-      }
-    }
+          lastFocus = document.activeElement;
 
-    /* ===== Observe stage changes ===== */
-    const observer = new MutationObserver(syncVisibility);
-    observer.observe(stage, {
-      attributes: true,
-      attributeFilter: ["data-active", "data-mode"]
-    });
+          el.classList.add("glassmodal--open");
+          el.setAttribute("aria-hidden", "false");
 
-    /* ===== Hide immediately on bottom nav click ===== */
-    if (bottomBar) {
-      bottomBar.addEventListener("click", () => {
-        dismissed = true;
-        hide();
-      });
-    }
+          var closeBtn = el.querySelector(".glassmodal__close");
+          if (closeBtn) closeBtn.focus();
 
-    /* ===== Init ===== */
-    syncVisibility();
-  })();
-</script>
+          if (which === "events") renderEvents();
+          if (which === "contact") {
+            var email = document.querySelector(
+              "#contactForm input[name='email']",
+            );
+            if (email) email.focus();
+          }
+        }
 
+        // ✅ FIX: uiModalOpen reflects whether ANY glass modal is open
+        function closeGlass(which, opts) {
+          opts = opts || {};
+          var el = document.getElementById(
+            which === "events" ? "eventsModal" : "contactModal",
+          );
+          if (!el) return;
 
-</body>
-<script src="{% static 'afrotime.js' %}"></script>
+          el.classList.remove("glassmodal--open");
+          el.setAttribute("aria-hidden", "true");
+
+          var eOpen =
+            document.getElementById("eventsModal") &&
+            document
+              .getElementById("eventsModal")
+              .classList.contains("glassmodal--open");
+          var cOpen =
+            document.getElementById("contactModal") &&
+            document
+              .getElementById("contactModal")
+              .classList.contains("glassmodal--open");
+
+          uiModalOpen = !!(eOpen || cOpen);
+
+          if (!uiModalOpen) {
+            setTabActive(null);
+            if (!opts.silent && lastFocus && lastFocus.focus) lastFocus.focus();
+            scheduleNext();
+          }
+        }
+
+        function wireModalClosers(modalId, which) {
+          var el = document.getElementById(modalId);
+          if (!el) return;
+
+          var closeBtn = el.querySelector(".glassmodal__close");
+          if (closeBtn)
+            closeBtn.addEventListener("click", function () {
+              closeGlass(which);
+            });
+
+          el.addEventListener("click", function (e) {
+            if (
+              e.target.classList &&
+              e.target.classList.contains("glassmodal__backdrop")
+            )
+              closeGlass(which);
+          });
+        }
+        wireModalClosers("eventsModal", "events");
+        wireModalClosers("contactModal", "contact");
+
+        // contact submit (demo)
+        document.addEventListener("submit", function (e) {
+          if (!e.target || e.target.id !== "contactForm") return;
+          e.preventDefault();
+
+          var status = document.getElementById("contactStatus");
+          if (status) status.textContent = "Sending…";
+
+          setTimeout(function () {
+            if (status) status.textContent = "Sent!";
+            try {
+              e.target.reset();
+            } catch (_) {}
+          }, 600);
+        });
+
+        // Header handlers
+        if (tabEventsBtn)
+          tabEventsBtn.addEventListener("click", function () {
+            openGlass("events");
+          });
+        if (tabConnectBtn)
+          tabConnectBtn.addEventListener("click", function () {
+            openGlass("contact");
+          });
+
+        // ===== Bottom click: open right nav + auto-select first nav item
+        bottomBar.addEventListener("click", function (e) {
+          if (uiModalOpen || ytOpen) return;
+
+          var tile = e.target.closest(".tile");
+          if (!tile || !bottomBar.contains(tile)) return;
+
+          var idx = Number(tile.dataset.index);
+          if (Number.isNaN(idx)) return;
+
+          goToIndex(idx, { keepNavOpen: true, autoSelectFirst: true });
+        });
+
+        bottomBar.addEventListener("keydown", function (e) {
+          if (uiModalOpen || ytOpen) return;
+
+          if (e.key !== "Enter" && e.key !== " ") return;
+          var tile = e.target.closest(".tile");
+          if (!tile) return;
+          e.preventDefault();
+
+          var idx = Number(tile.dataset.index);
+          if (Number.isNaN(idx)) return;
+
+          goToIndex(idx, { keepNavOpen: true, autoSelectFirst: true });
+        });
+
+        // Right nav click selects nav item
+        rightNav.addEventListener("click", function (e) {
+          if (uiModalOpen || ytOpen) return;
+
+          var row = e.target.closest(".navitem");
+          if (!row || !rightNav.contains(row)) return;
+          var idx = Number(row.dataset.navIndex);
+          if (Number.isNaN(idx)) return;
+          setBackgroundToNavItem(idx);
+        });
+
+        rightNav.addEventListener("keydown", function (e) {
+          if (uiModalOpen || ytOpen) return;
+
+          if (e.key !== "Enter" && e.key !== " ") return;
+          var row = e.target.closest(".navitem");
+          if (!row) return;
+          e.preventDefault();
+          var idx = Number(row.dataset.navIndex);
+          if (Number.isNaN(idx)) return;
+          setBackgroundToNavItem(idx);
+        });
+
+        // Scrim closes right nav (returns to video)
+        navScrim.addEventListener("click", function () {
+          if (uiModalOpen || ytOpen) return;
+          closeRightNav({ returnToVideoIfImage: true });
+        });
+
+        // Play button opens YouTube modal for CURRENT nav item
+        playBtn.addEventListener("click", function () {
+          if (!currentYouTube) return;
+          openYouTubeModal(currentYouTube, currentTitle);
+        });
+
+        // iOS may require a direct user gesture before media playback.
+        videoStartBtn.addEventListener("click", function () {
+          var visibleVideo = showingA ? vidA : vidB;
+          attemptVideoPlayback(blockedVideo || visibleVideo, false);
+        });
+
+        // YouTube modal close
+        ytCloseBtn.addEventListener("click", closeYouTubeModal);
+        ytBackdrop.addEventListener("click", closeYouTubeModal);
+
+        // Escape key closes: YouTube -> Events -> Contact -> RightNav
+        document.addEventListener("keydown", function (e) {
+          if (e.key !== "Escape") return;
+
+          if (ytModal.classList.contains("ytmodal--open")) {
+            closeYouTubeModal();
+            return;
+          }
+
+          var eM = document.getElementById("eventsModal");
+          if (eM && eM.classList.contains("glassmodal--open")) {
+            closeGlass("events");
+            return;
+          }
+
+          var cM = document.getElementById("contactModal");
+          if (cM && cM.classList.contains("glassmodal--open")) {
+            closeGlass("contact");
+            return;
+          }
+
+          if (navOpen) closeRightNav({ returnToVideoIfImage: true });
+        });
+
+        // Keep DSP roller aligned on resize
+        window.addEventListener("resize", function () {
+          if (dspWidget.classList.contains("dsp--show")) applyDSPTransform();
+        });
+
+        // Visibility behavior
+        document.addEventListener("visibilitychange", function () {
+          if (document.hidden) {
+            clearTimer();
+            clearDSP();
+            try {
+              vidA.pause();
+              vidB.pause();
+            } catch (_) {}
+          } else {
+            if (uiModalOpen || ytOpen) return;
+
+            if (!navOpen) {
+              mode = "video";
+              syncStageMode();
+              setPlayButtonVisible(false);
+              setDSPVisible(false);
+              clearDSP();
+
+              var entry = entryForSlot(activeIndex) || {};
+              var tile = getTileBySlot(activeIndex);
+              var v = (tile && tile.dataset.video) || entry.video;
+              var visibleVideo = showingA ? vidA : vidB;
+
+              if (visibleVideo.getAttribute("src") === v) {
+                attemptVideoPlayback(visibleVideo, false);
+              } else {
+                crossfadeTo({ type: "video", src: v });
+              }
+            }
+          }
+        });
+
+        // Safari can restore a page from its back-forward cache without a
+        // matching visibilitychange event, leaving its video paused.
+        window.addEventListener("pageshow", function (event) {
+          if (!event.persisted || mode !== "video" || navOpen) return;
+          attemptVideoPlayback(showingA ? vidA : vidB, false);
+        });
+
+        // ===== Init
+        TILE_LIST.forEach(function (t, i) {
+          if (!t.dataset.index) t.dataset.index = String(i);
+        });
+
+        syncStageMode();
+
+        bgA.dataset.mode = "video";
+
+        // Show the first slider content immediately on load instead of waiting
+        // for a manual click on the first tile.
+        autoSelectFirstNavItem();
+
+        // restart progress on the *active tile* (slot-based)
+        restartProgress(getTileBySlot(activeIndex) || TILE_LIST[0]);
+
+        setTabActive(null);
+
+        // center the first active tile on mobile
+        try {
+          (getTileBySlot(activeIndex) || TILE_LIST[0]).scrollIntoView({
+            inline: "center",
+            block: "nearest",
+          });
+        } catch (_) {}
+
+        vidA.addEventListener(
+          "playing",
+          function () {
+            scheduleNext();
+          },
+          { once: true },
+        );
+      })();
+    </script>
+
+    <script>
+      (function () {
+        /* ===== CONFIG ===== */
+        const TARGET_INDEX = "0"; // Revival
+        const TARGET_DATE = new Date("2026-03-05T00:00:00Z");
+
+        /* ===== DOM ===== */
+        const stage = document.getElementById("stage");
+        const countdown = document.getElementById("revivalCountdown");
+        const timeEl = document.getElementById("countdownTime");
+        const bottomBar = document.getElementById("bottomBar");
+
+        if (!stage || !countdown || !timeEl) return;
+
+        let timer = null;
+        let dismissed = false;
+
+        /* ===== Countdown math ===== */
+        function getCountdown() {
+          const diff = TARGET_DATE - new Date();
+          if (diff <= 0) return null;
+
+          const d = Math.floor(diff / 86400000);
+          const h = Math.floor(diff / 3600000) % 24;
+          const m = Math.floor(diff / 60000) % 60;
+          const s = Math.floor(diff / 1000) % 60;
+
+          return `${d}d ${h}h ${m}m ${s}s`;
+        }
+
+        /* ===== Visibility ===== */
+        function show() {
+          if (dismissed) return;
+
+          const value = getCountdown();
+          if (!value) return hide();
+
+          timeEl.textContent = value;
+          countdown.classList.add("countdown--show");
+          countdown.setAttribute("aria-hidden", "false");
+
+          clearInterval(timer);
+          timer = setInterval(() => {
+            const v = getCountdown();
+            if (!v) hide();
+            else timeEl.textContent = v;
+          }, 1000);
+        }
+
+        function hide() {
+          clearInterval(timer);
+          timer = null;
+          countdown.classList.remove("countdown--show");
+          countdown.setAttribute("aria-hidden", "true");
+        }
+
+        /* ===== React to app state ===== */
+        function syncVisibility() {
+          const active = stage.getAttribute("data-active");
+          const mode = stage.getAttribute("data-mode");
+
+          if (active === TARGET_INDEX && mode === "video") {
+            dismissed = false;
+            show();
+          } else {
+            hide();
+          }
+        }
+
+        /* ===== Observe stage changes ===== */
+        const observer = new MutationObserver(syncVisibility);
+        observer.observe(stage, {
+          attributes: true,
+          attributeFilter: ["data-active", "data-mode"],
+        });
+
+        /* ===== Hide immediately on bottom nav click ===== */
+        if (bottomBar) {
+          bottomBar.addEventListener("click", () => {
+            dismissed = true;
+            hide();
+          });
+        }
+
+        /* ===== Init ===== */
+        syncVisibility();
+      })();
+    </script>
+  </body>
+  <script src="{% static 'afrotime.js' %}"></script>
 </html>
