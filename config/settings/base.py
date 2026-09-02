@@ -93,6 +93,10 @@ TIME_ZONE = 'UTC'
 USE_I18N = True
 USE_TZ = True
 
+# YouTube embeds require the site's origin in the Referer header. This policy
+# sends only the origin cross-site (never the path or query string).
+SECURE_REFERRER_POLICY = "strict-origin-when-cross-origin"
+
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / "vol" / "static"
 STATICFILES_DIRS = [

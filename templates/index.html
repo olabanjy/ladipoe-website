@@ -294,36 +294,6 @@
         display: grid;
       }
 
-      /* Mobile browsers can block even muted autoplay (for example in Low
-         Power Mode). Give visitors a direct, user-initiated way to recover. */
-      .video-start {
-        position: absolute;
-        left: 50%;
-        top: 50%;
-        z-index: 98;
-        display: none;
-        align-items: center;
-        gap: 9px;
-        transform: translate(-50%, -50%);
-        border: 1px solid rgba(255, 255, 255, 0.28);
-        border-radius: 999px;
-        padding: 12px 18px;
-        background: rgba(0, 0, 0, 0.58);
-        color: rgba(255, 255, 255, 0.96);
-        font: inherit;
-        font-size: 14px;
-        cursor: pointer;
-        backdrop-filter: blur(10px);
-        -webkit-backdrop-filter: blur(10px);
-        -webkit-tap-highlight-color: transparent;
-      }
-      .video-start--show {
-        display: flex;
-      }
-      .video-start:active {
-        transform: translate(-50%, -50%) scale(0.98);
-      }
-
       /* ===== DSP roller widget (bottom-left) ===== */
       .dsp {
         position: absolute;
@@ -1241,16 +1211,6 @@
         </svg>
       </button>
 
-      <button
-        class="video-start"
-        id="videoStartBtn"
-        type="button"
-        aria-label="Play background video"
-      >
-        <span aria-hidden="true">▶</span>
-        <span>Tap to play</span>
-      </button>
-
       <!-- DSP roller (Listen on [DSP]) -->
       <div class="dsp" id="dspWidget" aria-label="Listen links">
         <div class="dsp__label">Listen on</div>
@@ -1335,7 +1295,7 @@
           <iframe
             id="ytFrame"
             title="YouTube player"
-            allow="autoplay; encrypted-media; picture-in-picture; web-share"
+            allow="autoplay; encrypted-media; fullscreen; picture-in-picture; web-share"
             referrerpolicy="strict-origin-when-cross-origin"
             allowfullscreen
           ></iframe>
@@ -1467,8 +1427,6 @@
         var navScrim = document.getElementById("navScrim");
 
         var playBtn = document.getElementById("bgPlayBtn");
-        var videoStartBtn = document.getElementById("videoStartBtn");
-
         var dspWidget = document.getElementById("dspWidget");
         var dspStack = document.getElementById("dspStack");
 
@@ -1548,7 +1506,6 @@
 
         var mode = "video"; // "video" | "image"
         var navOpen = false;
-        var blockedVideo = null;
 
         // current nav item media
         var currentYouTube = null;
@@ -1593,61 +1550,23 @@
         }
 
         function primeVideo(videoEl) {
-          videoEl.defaultMuted = true;
           videoEl.muted = true;
           videoEl.playsInline = true;
-          videoEl.autoplay = true;
-          videoEl.loop = true;
           videoEl.setAttribute("muted", "");
-          videoEl.setAttribute("autoplay", "");
-          videoEl.setAttribute("loop", "");
           videoEl.setAttribute("playsinline", "");
           videoEl.setAttribute("webkit-playsinline", "");
-        }
-
-        function setVideoStartVisible(visible, videoEl) {
-          blockedVideo = visible ? videoEl : null;
-          videoStartBtn.classList.toggle("video-start--show", !!visible);
-        }
-
-        function attemptVideoPlayback(videoEl, resetToStart) {
-          if (!videoEl) return;
-
-          primeVideo(videoEl);
-          if (resetToStart) {
-            try {
-              videoEl.currentTime = 0;
-            } catch (_) {}
-          }
-
-          var playAttempt;
-          try {
-            playAttempt = videoEl.play();
-          } catch (_) {
-            setVideoStartVisible(true, videoEl);
-            return;
-          }
-
-          if (playAttempt && typeof playAttempt.then === "function") {
-            playAttempt
-              .then(function () {
-                if (blockedVideo === videoEl) setVideoStartVisible(false);
-              })
-              .catch(function () {
-                if (mode === "video") setVideoStartVisible(true, videoEl);
-              });
-          } else {
-            setVideoStartVisible(false);
-          }
         }
 
         function playVideo(videoEl, url) {
           if (!url) return;
           primeVideo(videoEl);
-          if (videoEl.getAttribute("src") !== url) videoEl.src = url;
+          if (videoEl.src !== url) videoEl.src = url;
 
           function start() {
-            attemptVideoPlayback(videoEl, true);
+            try {
+              videoEl.currentTime = 0;
+            } catch (_) {}
+            videoEl.play().catch(function () {});
           }
 
           if (videoEl.readyState >= 1) start();
@@ -1728,14 +1647,12 @@
 
           if (payload.type === "video") {
             setPlayButtonVisible(false);
-            setVideoStartVisible(false);
             setDSPVisible(false);
             clearDSP();
             currentYouTube = null;
 
             playVideo(incomingVid, payload.src);
           } else {
-            setVideoStartVisible(false);
             try {
               incomingVid.pause();
             } catch (_) {}
@@ -2008,10 +1925,19 @@
           ytModal.classList.add("ytmodal--open");
           ytModal.setAttribute("aria-hidden", "false");
 
+          var playerParams = new URLSearchParams({
+            autoplay: "1",
+            rel: "0",
+            playsinline: "1",
+            origin: window.location.origin,
+            widget_referrer: window.location.href,
+          });
+
           ytFrame.src =
             "https://www.youtube.com/embed/" +
             encodeURIComponent(id) +
-            "?autoplay=1&rel=0&playsinline=1";
+            "?" +
+            playerParams.toString();
 
           document.body.style.overflow = "hidden";
         }
@@ -2364,12 +2290,6 @@
           openYouTubeModal(currentYouTube, currentTitle);
         });
 
-        // iOS may require a direct user gesture before media playback.
-        videoStartBtn.addEventListener("click", function () {
-          var visibleVideo = showingA ? vidA : vidB;
-          attemptVideoPlayback(blockedVideo || visibleVideo, false);
-        });
-
         // YouTube modal close
         ytCloseBtn.addEventListener("click", closeYouTubeModal);
         ytBackdrop.addEventListener("click", closeYouTubeModal);
@@ -2408,10 +2328,6 @@
           if (document.hidden) {
             clearTimer();
             clearDSP();
-            try {
-              vidA.pause();
-              vidB.pause();
-            } catch (_) {}
           } else {
             if (uiModalOpen || ytOpen) return;
 
@@ -2425,22 +2341,10 @@
               var entry = entryForSlot(activeIndex) || {};
               var tile = getTileBySlot(activeIndex);
               var v = (tile && tile.dataset.video) || entry.video;
-              var visibleVideo = showingA ? vidA : vidB;
 
-              if (visibleVideo.getAttribute("src") === v) {
-                attemptVideoPlayback(visibleVideo, false);
-              } else {
-                crossfadeTo({ type: "video", src: v });
-              }
+              crossfadeTo({ type: "video", src: v });
             }
           }
-        });
-
-        // Safari can restore a page from its back-forward cache without a
-        // matching visibilitychange event, leaving its video paused.
-        window.addEventListener("pageshow", function (event) {
-          if (!event.persisted || mode !== "video" || navOpen) return;
-          attemptVideoPlayback(showingA ? vidA : vidB, false);
         });
 
         // ===== Init
